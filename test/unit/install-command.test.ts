@@ -65,7 +65,7 @@ describe("installSkills export", () => {
 
   // ── SKILLS_REPO default ──────────────────────────────────────────────
 
-  it("SKILLS_REPO defaults to a5535772/saicmotor-cli", () => {
+  it("SKILLS_REPO reads default from saicmotor.config.json", () => {
     expect(SKILLS_REPO).toBe("a5535772/saicmotor-cli");
   });
 });

@@ -173,6 +173,22 @@ saicmotor --version
 
 ---
 
+## 配置
+
+安装地址和 skills 仓库信息集中在 `saicmotor.config.json` 中管理。公司内部部署时只需修改这一个文件：
+
+```json
+{
+  "repo": "公司/saicmotor-cli",
+  "installUrl": "内部安装地址",
+  "repository": "内部仓库地址"
+}
+```
+
+用户侧无需任何改动，安装命令自动读取配置文件。
+
+---
+
 ## 常见问题
 
 ### Q: 装完了敲 `saicmotor` 提示"找不到命令"？
@@ -229,5 +245,7 @@ saicmotor auth login --username <工号> --password <密码>
 ## 相关链接
 
 - [架构设计](../docs/ARCHITECTURE.md)
+- [安装分发机制](../docs/ARCHITECTURE.md#11-安装与分发)
+- [配置化说明](../docs/ARCHITECTURE.md#12-配置化)
 - [GitHub 仓库](https://github.com/a5535772/saicmotor-cli)
 - [Sprint 进度](../docs/sprint/总览.md)

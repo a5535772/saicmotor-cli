@@ -258,7 +258,8 @@ saicmotor-suite          ← 聚合路由入口
 
 ```
 saicmotor-cli/
-├── package.json                   🟢  bin: { "saicmotor": "dist/cli/index.js" }
+├── package.json                   🟢  bin: { "saicmotor": "scripts/run.js" }
+│   └── saicmotor.config.json       🟢  安装/仓库配置（配置中心化）
 │
 ├── src/
 │   ├── cli/
@@ -301,7 +302,9 @@ saicmotor-cli/
 │   └── saicmotor-shared/
 │       └── SKILL.md               🟢  认证/配置/排障
 │
-├── scripts/                       🟢  已实现：脚本覆盖 HTTP
+├── scripts/                       🟢  已实现
+│   ├── run.js                      🟢  bin shim 入口（对标 feishu-cli）
+│   ├── postinstall.js              🟢  AI skills 注册（installSkills）
 │   ├── leave/applications/        🟢  leave/applications/submit.ts（验证脚本）
 │   └── attendance/corrections/    🟢  attendance/corrections/submit.ts（考勤补签提交流程）
 │
@@ -465,18 +468,162 @@ flowchart LR
 flowchart LR
     S1["Sprint 1 ✅<br/>POC 骨架<br/>引擎 + 认证 + 网关"] --> S2["Sprint 2 ✅<br/>Attendance 测试补齐"]
     S2 --> S3["Sprint 3 ✅<br/>三层架构落地<br/>skills + scripts"]
-    S3 --> S4["Sprint 4 ⬜<br/>AI 发现机制<br/>npx skills add"]
+    S3 --> S4["Sprint 4 ✅<br/>AI 发现机制<br/>skills add + postinstall + bin shim"]
     S4 --> S5["Sprint 5 ⬜<br/>真实 SSO 打通<br/>可插拔 auth"]
 ```
 
 | Sprint | 主题 | 核心交付 |
 |--------|------|----------|
 | 1 ✅ | POC 基础 | CLI 骨架 + 8 模块引擎 + password 认证 + mock-gateway |
-| 2 ✅ | 测试补齐 | Attendance 集成测试，46 个测试全部通过 |
+| 2 ✅ | 测试补齐 | Attendance 集成测试，66 个测试全部通过 |
 | 3 ✅ | 三层架构 | catalog 保持声明式，scripts 按需覆盖（调度机制 + 验证脚本 + 单测），skills 做编排 |
-| 4 ⬜ | AI 发现 | `skills/` 目录填充 + `npx skills add` + postinstall |
+| 4 ✅ | AI 发现 | skills 注册 (`npx skills add`) + postinstall + bin shim 弹性架构 + 配置中心化 |
 | 5 ⬜ | SSO 对接 | 扩展 redirect/exchange auth type，打通真实认证链路 |
 
 ---
 
-> Sprint 详情见 [`docs/sprint/总览.md`](sprint/总览.md)
+## 11. 安装与分发
+
+saicmotor-cli 对标 feishu-cli 的分发架构，采用 **bin shim + postinstall** 模式。
+
+### 11.1 安装命令
+
+```bash
+npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
+```
+
+> 公司部署时通过 `saicmotor.config.json` 切换安装源，见 [§12 配置化](#12-配置化)。
+
+### 11.2 安装流程
+
+```mermaid
+flowchart LR
+    A["npm install -g"] --> B["下载 tarball"]
+    B --> C["解压到 node_modules/"]
+    C --> D["npm install 依赖"]
+    D --> E["prepare: 检查 dist/ 存在"]
+    E --> F["postinstall: 注册 AI skills"]
+    F --> G["bin link: saicmotor → scripts/run.js"]
+```
+
+### 11.3 bin shim 模式（对标 feishu-cli）
+
+`package.json` 的 `bin` 不直接指向编译产物，而是指向一个 JS shim：
+
+```json
+"bin": { "saicmotor": "scripts/run.js" }
+```
+
+`scripts/run.js` 的职责：
+1. 检查 `dist/cli/index.js` 是否存在
+2. 存在 → `require()` 代理到真实 CLI 入口
+3. 缺失 → 输出清晰的修复指引（而非晦涩的 Node.js 模块错误）
+
+**为什么不直接指向 `dist/cli/index.js`：**
+
+| 直接指向编译产物 | bin shim 模式 |
+|---|---|
+| 文件缺失 → `Error: Cannot find module '.../index.js'` | 文件缺失 → 中文友好提示 + 修复命令 |
+| dist/ 损坏时 CLI 完全不可用 | shim 自身极简（~15 行），几乎不可能损坏 |
+| 对标 feishu-cli 的 `scripts/run.js` 入口模式 | ✅ |
+
+### 11.4 postinstall 流程
+
+`npm install` 完成后自动运行 `scripts/postinstall.js`：
+
+```mermaid
+flowchart TB
+    POST["postinstall"] --> CHECK{"npx skills ls -g<br/>已有 saicmotor-* ?"}
+    CHECK -->|"是"| SKIP["跳过：AI skills 已安装"]
+    CHECK -->|"否"| ADD["npx skills add ... --all -g"]
+    ADD --> SUCCESS["✓ AI skills 已注册"]
+    ADD -.->|"失败"| WARN["⚠ 降级提示：手动运行 saicmotor install"]
+    POST -.->|"|| true"| OK["不影响 npm install"]
+```
+
+**弹性设计：**
+- `package.json` 的 postinstall 命令是 `node scripts/postinstall.js || true`
+- `|| true` 确保 postinstall 失败不会中断 npm 全局安装
+- 用户可通过 `saicmotor install --force` 手动注册
+- `SAICMOTOR_SKILLS_REPO` 环境变量可覆盖 skills 仓库地址
+
+### 11.5 为什么用 `tarball/master` 而不是 `github:owner/repo`
+
+#### tarball URL 的工作机制
+
+GitHub 为每个仓库自动提供 tarball API：
+
+```
+https://github.com/<owner>/<repo>/tarball/<ref>
+```
+
+其中 `<ref>` 可以是分支名（如 `master`）、tag 名（如 `v1.0.0`）或 commit SHA。
+
+npm 收到 tarball URL 时的处理：
+1. npm 调用 HTTP 下载（`Content-Type: application/x-gzip`）
+2. GitHub 实时打包该 ref 的最新代码，返回 tar.gz 流
+3. npm 解压到全局 `node_modules/`，**直接复制文件**（不建 symlink，不从 git clone）
+4. 然后正常 `npm install` 依赖 + 运行生命周期钩子（prepare → postinstall）
+
+#### 为什么不用 `github:` 简写
+
+npm v11 对 `github:` 和 `git+https:` 的处理变了——全局安装时使用 **symlink** 而非文件复制：
+
+| 安装命令 | npm v11 行为 | 结果 |
+|----------|-------------|------|
+| `github:owner/repo` | `git clone` 到 `_cacache/tmp/` → **symlink** | ❌ 临时目录被清理 → 文件丢失 |
+| `git+https://...` | 同上 | ❌ 同上 |
+| `tarball/master` | 下载 tar.gz → **复制文件** | ✅ 稳定可靠 |
+
+**根因**：npm v11 的 `github:` / `git+https:` 全局安装时使用 symlink 指向 cache 临时目录。该目录在安装完成后被清理，导致 symlink 悬空——所有文件丢失。
+
+**为什么 feishu-cli 不受影响**：feishu-cli 发布在 npm registry（`@larksuite/cli`），不走 GitHub 直装路径，不触发此 bug。saicmotor-cli 目前未发布到 npm registry，只能走 GitHub 直装，因此必须用 tarball URL。
+
+#### 为什么这个项目要这么做
+
+1. **未发布到 npm registry**：项目处于早期阶段，GitHub tarball 是最快的分发方式
+2. **tarball URL 是 GitHub 原生支持的稳定接口**：不依赖 npm 内部实现细节（如 `github:` 的 git clone → symlink 行为）
+3. **对标 feishu-cli 的长期目标**：一旦发布到 npm registry（公司内部或公网），`installUrl` 配置改为包名即可，用户直接 `npm install -g saicmotor-cli`
+4. **配置化后灵活切换**：公司部署时可指向内部 GitLab 的 releases API
+
+---
+
+## 12. 配置化
+
+saicmotor-cli 的所有外部 URL 引用集中在 `saicmotor.config.json`，实现一次修改、全局生效。
+
+### 12.1 配置文件
+
+```json
+{
+  "repo": "a5535772/saicmotor-cli",
+  "installUrl": "https://github.com/a5535772/saicmotor-cli/tarball/master",
+  "repository": "https://github.com/a5535772/saicmotor-cli"
+}
+```
+
+**公司部署示例**（发布到内部 npm registry 后）：
+
+```json
+{
+  "repo": "saicmotor/saicmotor-cli",
+  "installUrl": "saicmotor-cli",
+  "repository": "https://gitlab.internal.example.com/saicmotor/saicmotor-cli"
+}
+```
+
+### 12.2 优先级规则
+
+| 优先级 | 来源 | 说明 |
+|--------|------|------|
+| 1（最高） | 环境变量 `SAICMOTOR_SKILLS_REPO` | `export SAICMOTOR_SKILLS_REPO=my-org/custom-repo` |
+| 2 | `saicmotor.config.json` | 配置文件，随 npm 包分发 |
+| 3（默认） | 无 | 必须有配置文件或环境变量 |
+
+### 12.3 使用位置
+
+| 文件 | 字段 | 用途 |
+|------|------|------|
+| `scripts/postinstall.js` | `repo` | `npx skills add <repo> --all -g` |
+| `scripts/run.js` | `installUrl` | 入口缺失时的修复指引 |
+| `howto/INSTALL.md` | `installUrl` | 给用户的安装命令 |

@@ -2,7 +2,8 @@
 const { execSync: nodeExecSync } = require("child_process");
 
 const SKILLS_REPO =
-  process.env.SAICMOTOR_SKILLS_REPO || "a5535772/saicmotor-cli";
+  process.env.SAICMOTOR_SKILLS_REPO ||
+  require("../saicmotor.config.json").repo;
 
 // Injectable execSync — defaults to Node's built-in, overridable for testing
 let _execSync = nodeExecSync;

@@ -8,10 +8,11 @@ const fs = require("fs");
 const entry = path.join(__dirname, "..", "dist", "cli", "index.js");
 
 if (!fs.existsSync(entry)) {
+  const config = require("../saicmotor.config.json");
   console.error(
     [
       "saicmotor CLI 入口缺失。",
-      "请重新安装: npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master",
+      `请重新安装: npm install -g ${config.installUrl}`,
       "或在项目目录运行: npm run build",
     ].join("\n")
   );
