@@ -1,5 +1,8 @@
 {
   "repo": "a5535772/saicmotor-cli",
   "installUrl": "https://github.com/a5535772/saicmotor-cli/tarball/master",
-  "repository": "https://github.com/a5535772/saicmotor-cli"
+  "repository": "https://github.com/a5535772/saicmotor-cli",
+  "defaults": {
+    "gateway": "http://localhost:8081"
+  }
 }

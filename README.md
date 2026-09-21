@@ -84,7 +84,7 @@ saicmotor leave applications submit --start-date 2026-09-21 --reason 年假 --ye
 
 - CLI 是通用的——`leave` 和 `attendance` 用同一套引擎，区别只在 catalog JSON
 - 命令结构：`saicmotor <服务> <资源> <方法> [参数]`
-- 所有 HTTP 请求经网关（`config.gateway`，默认 `http://localhost:8081`）
+- 所有 HTTP 请求经网关（`saicmotor.config.json → defaults.gateway`，默认 `http://localhost:8081`）
 - 脚本覆盖：`scripts/` 下有同名 TS 文件就走脚本，否则 HTTP 直接回放
 
 → 完整架构：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -142,6 +142,8 @@ saicmotor attendance corrections submit --date 2026-09-21 --reason 忘记打卡 
 
 ## 开发
 
+> 完整开发者指南见 [howto/DEVELOPER.md](howto/DEVELOPER.md)——环境搭建、新增业务系统、添加 skill、测试、发版流程。
+
 ### 前提
 
 - Node ≥ 20
@@ -173,7 +175,7 @@ npx tsx src/cli/index.ts leave balance query
 ### 运行测试
 
 ```bash
-npm test          # 46 个测试（13 文件），全部纯 TypeScript
+npm test          # 66 个测试（16 文件），全部纯 TypeScript
 ```
 
 测试不需要 Java——`test/helpers/server.ts` 用 Node 起 mock HTTP server 替代整套 Java 栈。
@@ -206,8 +208,10 @@ mvn spring-boot:run
 │   ├── catalog/services/         声明式数据（leave.json · attendance.json）
 │   ├── scripts/                  脚本覆盖（leave/applications/submit.ts）
 │   ├── skills/                   AI agent 方向盘（4 个 SKILL.md）
-│   ├── test/                     46 测试（unit + integration）
-│   └── docs/ARCHITECTURE.md       架构设计
+│   ├── test/                     66 测试（unit + integration + scripts）
+│   ├── docs/                      架构 / Sprint / 设计文档 / 踩坑
+│   ├── howto/INSTALL.md           用户安装指南
+│   └── howto/DEVELOPER.md         开发者指南
 │
 ├── mock-gateway/               ← 🧪 模拟网关（Spring Boot）
 │   └── 认证 + Token 校验 + X-User-Id 注入 + 转发

@@ -15,8 +15,18 @@ export interface Config {
   auth: AuthConfig;
 }
 
+function loadPackageConfig(): { defaults?: { gateway?: string } } {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "saicmotor.config.json"), "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+const pkgConfig = loadPackageConfig();
+
 export const DEFAULT_CONFIG: Config = {
-  gateway: "http://localhost:8081",
+  gateway: pkgConfig.defaults?.gateway ?? "http://localhost:8081",
   auth: {
     type: "password",
     loginPath: "/auth/login",

@@ -40,8 +40,9 @@ CLI 的认证是自动的——执行任何业务命令时引擎会自动处理�
 ### 网关地址
 
 ```bash
-# 默认
-~/.saicmotor/config.json → { "gateway": "http://localhost:8081" }
+# 默认值来自 saicmotor.config.json 的 defaults.gateway（开发环境为 http://localhost:8081）
+# 用户通过 ~/.saicmotor/config.json 覆盖：
+~/.saicmotor/config.json → { "gateway": "http://实际网关地址" }
 
 # 环境变量覆盖（最高优先级）
 export SAICMOTOR_GATEWAY=https://gw.example.com

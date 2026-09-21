@@ -598,7 +598,10 @@ saicmotor-cli 的所有外部 URL 引用集中在 `saicmotor.config.json`，实�
 {
   "repo": "a5535772/saicmotor-cli",
   "installUrl": "https://github.com/a5535772/saicmotor-cli/tarball/master",
-  "repository": "https://github.com/a5535772/saicmotor-cli"
+  "repository": "https://github.com/a5535772/saicmotor-cli",
+  "defaults": {
+    "gateway": "http://localhost:8081"
+  }
 }
 ```
 
@@ -608,7 +611,10 @@ saicmotor-cli 的所有外部 URL 引用集中在 `saicmotor.config.json`，实�
 {
   "repo": "saicmotor/saicmotor-cli",
   "installUrl": "saicmotor-cli",
-  "repository": "https://gitlab.internal.example.com/saicmotor/saicmotor-cli"
+  "repository": "https://gitlab.internal.example.com/saicmotor/saicmotor-cli",
+  "defaults": {
+    "gateway": "https://gw.internal.example.com"
+  }
 }
 ```
 
@@ -616,9 +622,11 @@ saicmotor-cli 的所有外部 URL 引用集中在 `saicmotor.config.json`，实�
 
 | 优先级 | 来源 | 说明 |
 |--------|------|------|
-| 1（最高） | 环境变量 `SAICMOTOR_SKILLS_REPO` | `export SAICMOTOR_SKILLS_REPO=my-org/custom-repo` |
-| 2 | `saicmotor.config.json` | 配置文件，随 npm 包分发 |
-| 3（默认） | 无 | 必须有配置文件或环境变量 |
+| 1（最高） | 环境变量 `SAICMOTOR_SKILLS_REPO` | skills 仓库覆盖 |
+| 1（最高） | 环境变量 `SAICMOTOR_GATEWAY` | 网关地址覆盖 |
+| 2 | 用户 `~/.saicmotor/config.json` | `{ "gateway": "..." }`（仅 gateway 字段） |
+| 3 | `saicmotor.config.json` | 内置默认值，随 npm 包分发 |
+| 4（最低） | 代码硬编码 | `"http://localhost:8081"`（仅在配置文件缺失时使用） |
 
 ### 12.3 使用位置
 
@@ -626,4 +634,5 @@ saicmotor-cli 的所有外部 URL 引用集中在 `saicmotor.config.json`，实�
 |------|------|------|
 | `scripts/postinstall.js` | `repo` | `npx skills add <repo> --all -g` |
 | `scripts/run.js` | `installUrl` | 入口缺失时的修复指引 |
+| `src/config.ts` | `defaults.gateway` | CLI 默认网关地址 |
 | `howto/INSTALL.md` | `installUrl` | 给用户的安装命令 |

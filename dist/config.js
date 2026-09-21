@@ -14,8 +14,17 @@ exports.toCamel = toCamel;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_os_1 = __importDefault(require("node:os"));
 const node_path_1 = __importDefault(require("node:path"));
+function loadPackageConfig() {
+    try {
+        return JSON.parse(node_fs_1.default.readFileSync(node_path_1.default.join(__dirname, "..", "saicmotor.config.json"), "utf8"));
+    }
+    catch {
+        return {};
+    }
+}
+const pkgConfig = loadPackageConfig();
 exports.DEFAULT_CONFIG = {
-    gateway: "http://localhost:8081",
+    gateway: pkgConfig.defaults?.gateway ?? "http://localhost:8081",
     auth: {
         type: "password",
         loginPath: "/auth/login",
