@@ -32,7 +32,7 @@ saicmotor attendance records query     # 查打卡记录
 ### 方式一 — 从 GitHub 安装（推荐）
 
 ```bash
-npm install -g github:a5535772/saicmotor-cli
+npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 一行搞定。装完后 `saicmotor` 命令全局可用，AI skills 也会自动注册到你电脑上已安装的 AI 工具里。
@@ -87,7 +87,7 @@ saicmotor --help          # 列出所有可用命令
 **第 1 步 — 安装**
 
 ```bash
-npm install -g github:a5535772/saicmotor-cli
+npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 > 安装过程中会自动运行 `npx skills add a5535772/saicmotor-cli --all -g`，把 AI skills 注册到用户电脑上的 Claude Code、Trae 等 AI 工具。如果当前机器还没装 AI 工具，skills 注册会静默跳过（不影响 CLI 正常使用），用户可以之后手动运行 `saicmotor install` 重新注册。
@@ -213,7 +213,7 @@ cat ~/.saicmotor/config.json      # Mac / Linux
 换个镜像源试试：
 
 ```bash
-npm install -g github:a5535772/saicmotor-cli --registry=https://registry.npmmirror.com
+npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master --registry=https://registry.npmmirror.com
 ```
 
 ### Q: 401 错误（未授权）？

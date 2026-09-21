@@ -11,7 +11,7 @@ if (!fs.existsSync(entry)) {
   console.error(
     [
       "saicmotor CLI 入口缺失。",
-      "请重新安装: npm install -g github:a5535772/saicmotor-cli",
+      "请重新安装: npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master",
       "或在项目目录运行: npm run build",
     ].join("\n")
   );

@@ -85,7 +85,7 @@ mvn spring-boot:run
 ### 1.1 安装
 
 ```powershell
-npm install -g github:a5535772/saicmotor-cli
+npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 > **预期**：正常结束，没有 error。输出中应该看到：
@@ -301,7 +301,7 @@ saicmotor --version
 
 ```powershell
 # 用户跑 AI 给的这条命令
-npm install -g github:a5535772/saicmotor-cli
+npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 安装成功后，AI Agent 会依次执行：
@@ -373,7 +373,7 @@ npm update -g saicmotor-cli
 > 如果 `npm update` 不生效（因为 GitHub 地址不被 npm 视为可更新），用覆盖安装：
 >
 > ```powershell
-> npm install -g github:a5535772/saicmotor-cli
+> npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
 > ```
 
 ### 3.3 验证升级
