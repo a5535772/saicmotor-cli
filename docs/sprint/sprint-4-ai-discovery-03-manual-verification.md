@@ -80,6 +80,32 @@ mvnw spring-boot:run
 
 ```powershell
 npm install -g --dangerously-allow-all-scripts https://github.com/a5535772/saicmotor-cli/tarball/master
+
+
+--leo 备注
+
+--代理模式
+npm install -g --dangerously-allow-all-scripts --proxy http://127.0.0.1:7897 --https-proxy http://127.0.0.1:7897 https://github.com/a5535772/saicmotor-cli/tarball/master
+
+--用完删掉：
+npm config delete proxy --location=user
+npm config delete https-proxy --location=user
+
+--● 可以验证。先把 skills 删干净，再装一次看看是不是真的能自动注册回来：
+
+  # 删掉 saicmotor skills
+  npx skills rm saicmotor-suite -g
+  npx skills rm saicmotor-leave -g
+  npx skills rm saicmotor-attendance -g
+  npx skills rm saicmotor-shared -g
+
+  # 确认没了
+  npx skills ls -g
+
+  # 重新注册
+  saicmotor install --force
+
+  如果 install --force 之后 skills 回来了，说明安装链路是通的，跟之前装不装过没关系。
 ```
 
 > **预期**：正常结束，无 error。输出中应看到：
