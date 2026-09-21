@@ -11,6 +11,7 @@
     "scripts/"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "postinstall": "node scripts/postinstall.js",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
