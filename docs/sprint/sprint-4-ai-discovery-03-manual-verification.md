@@ -79,7 +79,7 @@ mvnw spring-boot:run
 打开第三个 **PowerShell** 终端，执行：
 
 ```powershell
-npm install -g --allow-scripts=saicmotor-cli https://github.com/a5535772/saicmotor-cli/tarball/master
+npm install -g --dangerously-allow-all-scripts https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 > **预期**：正常结束，无 error。输出中应看到：
@@ -89,8 +89,8 @@ npm install -g --allow-scripts=saicmotor-cli https://github.com/a5535772/saicmot
 >   首次使用前请运行: saicmotor auth login
 >   探索命令: saicmotor --help
 > ```
->
-> 如果没加 `--allow-scripts`，npm v11+ 会跳过 postinstall，安装后手动跑 `saicmotor install --force` 即可。
+
+`--dangerously-allow-all-scripts` 名字吓人但只影响本次安装这一个包，确保 postinstall 能跑起来注册 skills。
 
 **截图位：➊ 安装输出**
 
@@ -290,7 +290,7 @@ saicmotor --version
 **如果实际升级测试**（发布了新版后）：
 
 ```powershell
-npm install -g --allow-scripts=saicmotor-cli https://github.com/a5535772/saicmotor-cli/tarball/master
+npm install -g --dangerously-allow-all-scripts https://github.com/a5535772/saicmotor-cli/tarball/master
 saicmotor --version
 ```
 
