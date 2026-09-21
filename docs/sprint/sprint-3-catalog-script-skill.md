@@ -61,4 +61,4 @@ catalog 和 script **不是平级目录**，是**同一条 method 的两种执�
 
 - 设计：[2026-09-20-saicmotor-cli-gateway-design.md](../superpowers/specs/2026-09-20-saicmotor-cli-gateway-design.md)
 - 计划：[2026-09-20-saicmotor-cli-gateway.md](../superpowers/plans/2026-09-20-saicmotor-cli-gateway.md)
-- CLI 架构：[ARCHITECTURE.md](../../saicmotor-cli/doc/ARCHITECTURE.md)
+- CLI 架构：[ARCHITECTURE.md](../ARCHITECTURE.md)

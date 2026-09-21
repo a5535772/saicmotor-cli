@@ -71,7 +71,7 @@ runMethod(config, service, resourceName, methodName, method, raw, opts)
 | 修改 | `src/config.ts` | 加 `scriptsDir()` |
 | 新建 | `scripts/` | 空目录（占位） |
 | 新建 | `test/unit/script.test.ts` | 单元测试 |
-| 修改 | `doc/ARCHITECTURE.md` | 状态标记更新 |
+| 修改 | `docs/ARCHITECTURE.md` | 状态标记更新 |
 
 ## 4. 验证脚本
 

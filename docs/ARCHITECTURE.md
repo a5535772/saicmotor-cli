@@ -8,9 +8,9 @@
 
 ## 1. 一句话定位
 
-**saicmotor-cli 是一个通用平台——把无源码的 Web 业务系统包装成命令行。**
+**saicmotor-cli 是一个面向 AI Agent 的企业 CLI 工具平台——用 skill 编排任务，用 catalog 声明接口，用引擎自动执行。**
 
-员工在网页上点的操作，变成 `saicmotor <系统> <命令> <参数>`。人和 AI Agent 共用同一套接口。
+员工在网页上点的操作，变成 `saicmotor <系统> <命令> <参数>`。人和 AI Agent 共用同一套接口。AI Agent 先读 skills/SKILL.md 知道怎么编排，再通过 CLI 执行。
 
 **核心约束：**
 
@@ -479,4 +479,4 @@ flowchart LR
 
 ---
 
-> Sprint 详情见 [`docs/sprint/总览.md`](../../docs/sprint/总览.md)
+> Sprint 详情见 [`docs/sprint/总览.md`](sprint/总览.md)

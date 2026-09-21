@@ -8,7 +8,7 @@
 
 ## 背景
 
-当前 CLI 的 auth 模型已经设计为可插拔架构，参见 [ARCHITECTURE.md](../../saicmotor-cli/doc/ARCHITECTURE.md) §7：
+当前 CLI 的 auth 模型已经设计为可插拔架构，参见 [ARCHITECTURE.md](../ARCHITECTURE.md) §7：
 
 | type | 场景 | 说明 |
 |---|---|---|
@@ -35,4 +35,4 @@
 
 - 设计：[2026-09-20-saicmotor-cli-gateway-design.md](../superpowers/specs/2026-09-20-saicmotor-cli-gateway-design.md)
 - 计划：[2026-09-20-saicmotor-cli-gateway.md](../superpowers/plans/2026-09-20-saicmotor-cli-gateway.md)
-- CLI 架构 §7（认证模型）：[ARCHITECTURE.md](../../saicmotor-cli/doc/ARCHITECTURE.md)
+- CLI 架构 §7（认证模型）：[ARCHITECTURE.md](../ARCHITECTURE.md)

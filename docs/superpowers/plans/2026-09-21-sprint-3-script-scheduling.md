@@ -26,7 +26,7 @@
 
 **Files:**
 - Modify: `saicmotor-cli/catalog/services/attendance.json`（补 `early_days` 字段）
-- Modify: `saicmotor-cli/doc/ARCHITECTURE.md`（skills 从 🟡 改 🟢）
+- Modify: `saicmotor-cli/docs/ARCHITECTURE.md`（skills 从 🟡 改 🟢）
 
 审核报告发现两处小瑕疵：`records.query` 的 `responseBody` 漏了 `early_days`（SKILL.md 和 mock 都返回了，catalog 没声明）；skills 已经提前做好但 ARCHITECTURE.md 仍标黄。
 
@@ -54,7 +54,7 @@ Expected: PASS（`catalog-load.test.ts` / `catalog-schema.test.ts` 不受影响�
 - [ ] **Step 4: Commit**
 
 ```bash
-git add saicmotor-cli/catalog/services/attendance.json saicmotor-cli/doc/ARCHITECTURE.md
+git add saicmotor-cli/catalog/services/attendance.json saicmotor-cli/docs/ARCHITECTURE.md
 git commit -m "fix(catalog): add missing early_days field; mark skills as done"
 ```
 
@@ -474,7 +474,7 @@ git commit -m "test(engine): script scheduling dispatch + fallback coverage"
 ### Task 5: 文档同步
 
 **Files:**
-- Modify: `saicmotor-cli/doc/ARCHITECTURE.md`
+- Modify: `saicmotor-cli/docs/ARCHITECTURE.md`
 - Modify: `docs/sprint/sprint-3-catalog-script-skill.md`
 - Modify: `docs/sprint/总览.md`
 
@@ -495,7 +495,7 @@ git commit -m "test(engine): script scheduling dispatch + fallback coverage"
 - [ ] **Step 4: Commit**
 
 ```bash
-git add saicmotor-cli/doc/ARCHITECTURE.md docs/sprint/sprint-3-catalog-script-skill.md docs/sprint/总览.md
+git add saicmotor-cli/docs/ARCHITECTURE.md docs/sprint/sprint-3-catalog-script-skill.md docs/sprint/总览.md
 git commit -m "docs: mark Sprint 3 script scheduling as done"
 ```
 

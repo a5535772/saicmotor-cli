@@ -75,7 +75,7 @@
 
 ## 架构决策
 
-详见 [ARCHITECTURE.md](../saicmotor-cli/doc/ARCHITECTURE.md)：
+详见 [ARCHITECTURE.md](../ARCHITECTURE.md)：
 - 引擎不可变 + spec 可重生成
 - 著作 AI 化 + 执行确定性
 - 报文层与命令层分离
