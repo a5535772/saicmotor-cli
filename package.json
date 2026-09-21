@@ -1,0 +1,36 @@
+{
+  "name": "saicmotor-cli",
+  "version": "0.1.0",
+  "description": "把无源码业务网页系统包装成 CLI 的通用平台（POC）",
+  "type": "commonjs",
+  "bin": { "saicmotor": "dist/cli/index.js" },
+  "files": [
+    "dist/",
+    "skills/",
+    "catalog/",
+    "scripts/"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "tsx src/cli/index.ts"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a5535772/saicmotor-cli.git"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "tsx": "^4.16.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

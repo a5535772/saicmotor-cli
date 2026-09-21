@@ -1,0 +1,63 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+export interface AuthConfig {
+  type: "password";
+  loginPath: string;
+  tokenPath: string;
+  tokenHeader: string;
+  tokenPrefix: string;
+}
+
+export interface Config {
+  gateway: string;
+  auth: AuthConfig;
+}
+
+export const DEFAULT_CONFIG: Config = {
+  gateway: "http://localhost:8081",
+  auth: {
+    type: "password",
+    loginPath: "/auth/login",
+    tokenPath: "data.token",
+    tokenHeader: "Authorization",
+    tokenPrefix: "Bearer",
+  },
+};
+
+export function saicmotorDir(): string {
+  return process.env.SAICMOTOR_HOME ?? path.join(os.homedir(), ".saicmotor");
+}
+
+export function configPath(): string {
+  return path.join(saicmotorDir(), "config.json");
+}
+
+export function loadConfig(): Config {
+  let user: Partial<Config> = {};
+  try {
+    user = JSON.parse(fs.readFileSync(configPath(), "utf8"));
+  } catch {
+    /* use defaults */
+  }
+  const gateway = process.env.SAICMOTOR_GATEWAY ?? user.gateway ?? DEFAULT_CONFIG.gateway;
+  const auth = { ...DEFAULT_CONFIG.auth, ...(user.auth ?? {}) };
+  return { gateway, auth };
+}
+
+export function catalogDir(): string {
+  return process.env.SAICMOTOR_CATALOG ?? path.join(__dirname, "..", "catalog", "services");
+}
+
+export function scriptsDir(): string {
+  return process.env.SAICMOTOR_SCRIPTS ?? path.join(__dirname, "..", "scripts");
+}
+
+export function toKebab(s: string): string {
+  return s.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()).replace(/_/g, "-");
+}
+
+export function toCamel(s: string): string {
+  return s.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+}

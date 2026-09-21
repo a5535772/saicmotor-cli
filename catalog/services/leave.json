@@ -1,0 +1,41 @@
+{
+  "name": "leave",
+  "title": "请假",
+  "description": "请假：查询年假余额、提交请假申请",
+  "servicePath": "/leave",
+  "resources": {
+    "balance": {
+      "methods": {
+        "query": {
+          "id": "balance.query",
+          "path": "/balance",
+          "httpMethod": "GET",
+          "description": "查询当前用户年假余额",
+          "responseBody": {
+            "annual_balance": { "type": "integer", "example": 5 },
+            "used": { "type": "integer", "example": 3 }
+          }
+        }
+      }
+    },
+    "applications": {
+      "methods": {
+        "submit": {
+          "id": "applications.submit",
+          "path": "/applications",
+          "httpMethod": "POST",
+          "description": "提交请假申请",
+          "requestBody": {
+            "start_date": { "type": "string", "required": true, "example": "2026-09-21" },
+            "end_date": { "type": "string", "required": true, "example": "2026-09-22" },
+            "reason": { "type": "string", "required": true, "example": "年假" }
+          },
+          "responseBody": {
+            "application_id": { "type": "string", "example": "APP-001" },
+            "status": { "type": "string", "example": "PENDING" }
+          }
+        }
+      }
+    }
+  }
+}

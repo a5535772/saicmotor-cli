@@ -1,0 +1,41 @@
+{
+  "name": "attendance",
+  "title": "考勤",
+  "description": "考勤：查询打卡记录、申请补卡",
+  "servicePath": "/attendance",
+  "resources": {
+    "records": {
+      "methods": {
+        "query": {
+          "id": "records.query",
+          "path": "/records",
+          "httpMethod": "GET",
+          "description": "查询本月打卡记录",
+          "responseBody": {
+            "work_days": { "type": "integer", "example": 22 },
+            "late_days": { "type": "integer", "example": 1 },
+            "early_days": { "type": "integer", "example": 0 }
+          }
+        }
+      }
+    },
+    "corrections": {
+      "methods": {
+        "submit": {
+          "id": "corrections.submit",
+          "path": "/corrections",
+          "httpMethod": "POST",
+          "description": "申请补卡",
+          "requestBody": {
+            "date": { "type": "string", "required": true, "description": "补卡日期", "example": "2026-09-21" },
+            "reason": { "type": "string", "required": true, "description": "补卡原因", "example": "忘记打卡" }
+          },
+          "responseBody": {
+            "correction_id": { "type": "string", "example": "COR-001" },
+            "status": { "type": "string", "example": "PENDING" }
+          }
+        }
+      }
+    }
+  }
+}
