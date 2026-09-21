@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行",
   "type": "commonjs",
-  "bin": { "saicmotor": "dist/cli/index.js" },
+  "bin": { "saicmotor": "scripts/run.js" },
   "files": [
     "dist/",
     "skills/",
@@ -13,7 +13,7 @@
   "scripts": {
     "prepare": "node -e \"if(!require('fs').existsSync('dist/cli/index.js'))console.warn('⚠ dist/ 缺失，请运行 npm run build')\"",
     "prepublishOnly": "npm run build && npm test",
-    "postinstall": "node scripts/postinstall.js",
+    "postinstall": "node scripts/postinstall.js || true",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "dev": "tsx src/cli/index.ts"
