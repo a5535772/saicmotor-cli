@@ -11,7 +11,8 @@
     "scripts/"
   ],
   "scripts": {
-    "prepare": "npm run build",
+    "prepare": "node -e \"if(!require('fs').existsSync('dist/cli/index.js'))console.warn('⚠ dist/ 缺失，请运行 npm run build')\"",
+    "prepublishOnly": "npm run build && npm test",
     "postinstall": "node scripts/postinstall.js",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",

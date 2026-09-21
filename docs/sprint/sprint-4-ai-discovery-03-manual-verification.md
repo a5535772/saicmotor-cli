@@ -74,7 +74,7 @@ mvn spring-boot:run
 
 打开 GitHub，看一眼现在的 `package.json` 版本号：https://github.com/a5535772/saicmotor-cli/blob/master/package.json
 
-记录当前版本号：`______`
+记录当前版本号：`0.1.0`
 
 ---
 
@@ -89,7 +89,7 @@ npm install -g github:a5535772/saicmotor-cli
 ```
 
 > **预期**：正常结束，没有 error。输出中应该看到：
-> - `prepare` 阶段成功（tsc 编译无报错）
+> - `prepare` 阶段静默通过（不再有 tsc 编译输出——dist/ 已在仓库中）
 > - postinstall 输出类似：
 >   ```
 >   saicmotor CLI 安装完成。
