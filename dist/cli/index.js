@@ -9,7 +9,7 @@ const output_1 = require("../engine/output");
 const auth_1 = require("./auth");
 const error_1 = require("./error");
 const program = new commander_1.Command();
-program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.3.0");
+program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.4.0");
 const config = (0, config_1.loadConfig)();
 const services = (0, catalog_1.loadCatalog)();
 for (const service of services) {

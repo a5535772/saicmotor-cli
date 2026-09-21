@@ -32,10 +32,12 @@ saicmotor attendance records query     # 查打卡记录
 ### 方式一 — 从 GitHub 安装（推荐）
 
 ```bash
-npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
+npm install -g --allow-scripts=saicmotor-cli https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 一行搞定。装完后 `saicmotor` 命令全局可用，AI skills 也会自动注册到你电脑上已安装的 AI 工具里。
+
+> **npm v11+ 用户注意**：npm 新版默认禁用安装脚本，需要加 `--allow-scripts=saicmotor-cli` 才能触发 postinstall（自动注册 AI skills）。不去掉也没关系——安装完成后手动运行 `saicmotor install --force` 效果一样。
 
 ### 方式二 — 从源码安装
 
@@ -87,10 +89,10 @@ saicmotor --help          # 列出所有可用命令
 **第 1 步 — 安装**
 
 ```bash
-npm install -g https://github.com/a5535772/saicmotor-cli/tarball/master
+npm install -g --allow-scripts=saicmotor-cli https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
-> 安装过程中会自动运行 `npx skills add a5535772/saicmotor-cli --all -g`，把 AI skills 注册到用户电脑上的 Claude Code、Trae 等 AI 工具。如果当前机器还没装 AI 工具，skills 注册会静默跳过（不影响 CLI 正常使用），用户可以之后手动运行 `saicmotor install` 重新注册。
+> 安装过程中会自动运行 `npx skills add a5535772/saicmotor-cli --all -g`，把 AI skills 注册到用户电脑上的 Claude Code、Trae 等 AI 工具。如果当前机器还没装 AI 工具或 npm v11+ 未加 `--allow-scripts`，skills 注册会静默跳过（不影响 CLI 正常使用），用户可以之后手动运行 `saicmotor install` 重新注册。
 
 **第 2 步 — 验证安装**
 
@@ -212,6 +214,8 @@ saicmotor install --force
 ```bash
 npx skills add a5535772/saicmotor-cli --all -g
 ```
+
+> **npm v11+ 用户**：安装时如果没加 `--allow-scripts=saicmotor-cli`，postinstall 会被跳过——安装成功后手动跑一次上面命令即可。
 
 ### Q: 登录失败？
 
