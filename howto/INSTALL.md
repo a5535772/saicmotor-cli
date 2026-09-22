@@ -129,26 +129,48 @@ saicmotor leave balance query --format table
 
 ## 卸载
 
-### 卸载 CLI
+> `npm uninstall` **只删 CLI 本身**，不会清除本地数据和 AI skills。要完全卸载干净，按下面三步执行。
+
+### 1. 卸载 CLI
 
 ```bash
 npm uninstall -g saicmotor-cli
 ```
 
-### 清除本地数据（可选）
-
-```
-删除目录：~/.saicmotor/
-（包含登录 token、凭证、配置）
-```
-
-### 卸载 AI skills（可选）
+### 2. 清除本地数据
 
 ```bash
-npx skills rm saicmotor-suite -g
-npx skills rm saicmotor-leave -g
-npx skills rm saicmotor-attendance -g
-npx skills rm saicmotor-shared -g
+# 删除目录（包含登录 token、凭证、配置）
+rm -rf ~/.saicmotor
+# Windows PowerShell:  Remove-Item -Recurse -Force $env:USERPROFILE\.saicmotor
+```
+
+### 3. 清除 AI skills
+
+skills 注册分两层：中央仓 `~/.agents/skills/saicmotor-*`（实体）+ 各 AI 客户端目录里的符号链接（如 `~/.claude/skills/`、`~/.codebuddy/skills/`）。
+
+```bash
+npx -y skills rm saicmotor-suite -g
+npx -y skills rm saicmotor-leave -g
+npx -y skills rm saicmotor-attendance -g
+npx -y skills rm saicmotor-shared -g
+```
+
+若客户端目录里留下指向中央仓的死链接，手动删除：
+
+```bash
+rm -f ~/.claude/skills/saicmotor-*
+rm -f ~/.codebuddy/skills/saicmotor-*
+```
+
+### 验证已卸载干净
+
+```bash
+saicmotor --version                          # 应 command not found
+npx -y skills ls -g                          # 应无 saicmotor 条目
+ls ~/.agents/skills | grep -i saicmotor      # 应无输出
+ls ~/.claude/skills | grep -i saicmotor      # 应无输出
+ls ~/.codebuddy/skills | grep -i saicmotor   # 应无输出
 ```
 
 ---

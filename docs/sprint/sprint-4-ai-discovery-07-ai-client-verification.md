@@ -59,18 +59,18 @@ mvnw spring-boot:run
 ## 阶段 2 — 初始手动清理（AI 执行，人只发指令）
 
 > 目的：从**绝对干净**的状态开始，排除"以前装过"的干扰。
-> 此时 AI 没有任何 saicmotor skill，它只能靠通用 shell 能力完成——这恰好验证 AI 能否在无 skill 时按用户意图操作系统。
+> 此时 AI 没有任何 saicmotor skill——它的知识来源是仓库里的**权威卸载文档** `howto/INSTALL.md`（§卸载），验证的是"AI 能否按文档执行"，而不是人复述命令。
 
-**新开客户端会话，建议在非项目目录（如 `%USERPROFILE%`）启动：**
+**新开客户端会话**（在 saicmotor-cli 项目目录启动，使其能读到文档文件；如不在项目目录，话术中给出文档绝对路径）：
 
 ```powershell
-cd $env:USERPROFILE
+cd D:\work\things\saicmotor-cli-all\saicmotor-cli
 claude          # CodeBuddy 侧改为 codebuddy
 ```
 
 **对 AI 说：**
 
-> "帮我把 saicmotor 相关的东西全部清干净：如果全局装了 saicmotor-cli 就用 npm 卸载；删掉用户目录下的 .saicmotor 文件夹；如果 skills 工具可用，把全局的 saicmotor-suite、saicmotor-leave、saicmotor-attendance、saicmotor-shared 四个技能都删掉。"
+> "先读一下 howto/INSTALL.md 里的'卸载'章节，然后严格按文档把 saicmotor 全部卸载干净：卸载 npm 全局包、清除本地数据、清除四个 AI skills 和客户端目录里可能残留的死链接。"
 
 **期望 AI 执行的命令（对照用）：**
 
@@ -83,9 +83,9 @@ npx -y skills rm saicmotor-attendance -g
 npx -y skills rm saicmotor-shared -g
 ```
 
-**清理验证（让 AI 自己检查并汇报结果），对它说：**
+**清理验证（让 AI 按文档自己检查并汇报结果），对它说：**
 
-> "检查一下是不是清干净了：saicmotor 命令应该不存在；skills 全局列表里不应该有 saicmotor；.claude/skills 和 .codebuddy/skills 目录里也不应该有 saicmotor 的链接或文件夹。"
+> "按 INSTALL.md 卸载章节最后的验证步骤逐项检查，把每条命令的实际结果告诉我，确认零残留。"
 
 **期望对照：**
 
@@ -204,9 +204,11 @@ saicmotor --version       # command not found
 
 ### 6.3 手动清理残留（AI 执行）
 
+> 注意：此时 npm 包已被卸载，AI 读不到包内文档。请让它读取项目源码里的文档（会话需在项目目录启动，或直接给出绝对路径 `D:\work\things\saicmotor-cli-all\saicmotor-cli\howto\INSTALL.md`）。
+
 对 AI 说：
 
-> "把剩下的残留全部清掉：删除四个 saicmotor 全局技能；删掉 .saicmotor 目录；如果 .claude/skills、.codebuddy/skills 里还有 saicmotor 的死链接或文件夹也删掉。"
+> "读一下 howto/INSTALL.md 的卸载章节，按文档把剩下的残留全部清掉：四个 AI skills、.saicmotor 目录，以及客户端目录里的死链接。"
 
 **期望对照：**
 
@@ -225,7 +227,7 @@ rm -f ~/.codebuddy/skills/saicmotor-*
 
 对 AI 说：
 
-> "最后确认一遍整个系统已经没有任何 saicmotor 残留：命令、skills 列表、两个客户端的 skills 目录、.agents 中央仓、.saicmotor 数据目录。"
+> "按 INSTALL.md 卸载章节的验证步骤最后确认一遍：命令、skills 列表、.agents 中央仓、两个客户端的 skills 目录、.saicmotor 数据目录，逐项汇报实际结果。"
 
 > **通过判据**：AI 逐项执行检查并汇报全部为空/不存在。
 
