@@ -2,9 +2,22 @@ import type { Config } from "../config";
 import { SaicmotorError } from "../engine/errors";
 import { send } from "../engine/http";
 import { getByPath } from "../engine/extract";
-import { writeToken } from "./store";
+import { writeToken, readCredentials } from "./store";
+import type { AuthProvider } from "./provider";
 
-export async function login(config: Config, username: string, password: string): Promise<string> {
+export class PasswordProvider implements AuthProvider {
+  constructor(private readonly config: Config) {}
+
+  async login(): Promise<string> {
+    const creds = readCredentials();
+    if (!creds) {
+      throw new SaicmotorError("auth", "缺少用户名", { hint: "设置 SAICMOTOR_USERNAME 或使用 auth login --username" });
+    }
+    return loginWithPassword(this.config, creds.username, creds.password);
+  }
+}
+
+export async function loginWithPassword(config: Config, username: string, password: string): Promise<string> {
   const resp = await send({
     method: "POST",
     url: config.gateway + config.auth.loginPath,

@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 import { loadConfig } from "../config";
 import { writeCredentials, clearCredentials, clearToken, readToken } from "../auth/store";
-import { login } from "../auth/login";
+import { loginWithPassword } from "../auth/password";
 import { handleError } from "./error";
 
 export function registerAuth(program: Command): void {
@@ -14,7 +14,7 @@ export function registerAuth(program: Command): void {
       try {
         const config = loadConfig();
         writeCredentials({ username: opts.username, password: opts.password });
-        const token = await login(config, opts.username, opts.password);
+        const token = await loginWithPassword(config, opts.username, opts.password);
         console.log(`已登录，token 已缓存（${token.slice(0, 8)}…）`);
       } catch (e) { handleError(e); }
     });

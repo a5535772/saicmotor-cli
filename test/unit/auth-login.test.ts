@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { loadConfig } from "../../src/config";
-import { login } from "../../src/auth/login";
+import { loginWithPassword as login } from "../../src/auth/password";
 import { ensureToken } from "../../src/auth/session";
 import { writeCredentials, writeToken, clearToken } from "../../src/auth/store";
 import { startServer, MockServer } from "../helpers/server";
