@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { findScript, scriptFileFor, executeScript, type ScriptFn } from "../../src/engine/script";
+import { findScript, scriptFileFor, type ScriptFn } from "../../src/engine/script";
+import { distRoot } from "../../src/pkg-root";
 import { runMethod } from "../../src/engine/run";
 import { loadConfig } from "../../src/config";
 import { writeCredentials } from "../../src/auth/store";
@@ -44,8 +45,10 @@ describe("script scheduling", () => {
     await server?.close();
   });
 
-  it("scriptFileFor builds system/resource/method path", () => {
-    expect(scriptFileFor("attendance", "corrections", "submit")).toBe(path.join(tmp, "attendance", "corrections", "submit.ts"));
+  it("scriptFileFor builds dist scripts .js path", () => {
+    expect(scriptFileFor("attendance", "corrections", "submit")).toBe(
+      path.join(distRoot(), "scripts", "attendance", "corrections", "submit.js"),
+    );
   });
 
   it("findScript returns path when file exists, null otherwise", () => {

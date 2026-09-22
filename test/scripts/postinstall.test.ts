@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   installSkills,
   __setExecSync,
-} from "../../scripts/postinstall.js";
+} from "../../src/install/skills";
 
 describe("installSkills", () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
@@ -58,6 +58,18 @@ describe("installSkills", () => {
     );
   });
 
+  it("detects installed skills despite ANSI color codes", () => {
+    // skills CLI 即便 stdio=pipe 也输出颜色码，行首带转义序列
+    execSyncMock.mockReturnValueOnce(
+      Buffer.from("\x1b[36msaicmotor-suite\x1b[0m\n\x1b[36msaicmotor-leave\x1b[0m\n")
+    );
+
+    installSkills();
+
+    expect(consoleLogSpy).toHaveBeenCalledWith("AI skills 已安装，跳过");
+    expect(execSyncMock).toHaveBeenCalledTimes(1);
+  });
+
   it("force reinstalls even if already installed", () => {
     execSyncMock
       .mockReturnValueOnce(Buffer.from("saicmotor-suite\n")); // skills ls
@@ -91,7 +103,7 @@ describe("installSkills", () => {
     );
   });
 
-  it("respects SAICMOTOR_SKILLS_REPO env var for custom repo", () => {
+  it("respects SAICMOTOR_SKILLS_REPO env var for custom repo", async () => {
     vi.stubEnv("SAICMOTOR_SKILLS_REPO", "my-org/private-repo");
     execSyncMock
       .mockImplementationOnce(() => {
@@ -99,10 +111,9 @@ describe("installSkills", () => {
       })
       .mockReturnValueOnce(Buffer.from(""));
 
-    // Reload module to pick up new env var (module reads at require time)
-    // We use delete + dynamic import to force re-evaluation
-    delete require.cache[require.resolve("../../scripts/postinstall.js")];
-    const fresh = require("../../scripts/postinstall.js");
+    // 重新加载模块以读取新 env（SKILLS_REPO 在模块求值时确定）
+    vi.resetModules();
+    const fresh = await import("../../src/install/skills");
     fresh.__setExecSync(execSyncMock);
     fresh.installSkills();
 

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { packageFile } from "./pkg-root";
 
 export interface AuthConfig {
   type: "password";
@@ -17,7 +18,7 @@ export interface Config {
 
 function loadPackageConfig(): { defaults?: { gateway?: string } } {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "saicmotor.config.json"), "utf8"));
+    return JSON.parse(fs.readFileSync(packageFile("saicmotor.config.json"), "utf8"));
   } catch {
     return {};
   }
@@ -57,11 +58,11 @@ export function loadConfig(): Config {
 }
 
 export function catalogDir(): string {
-  return process.env.SAICMOTOR_CATALOG ?? path.join(__dirname, "..", "catalog", "services");
+  return process.env.SAICMOTOR_CATALOG ?? packageFile(path.join("catalog", "services"));
 }
 
 export function scriptsDir(): string {
-  return process.env.SAICMOTOR_SCRIPTS ?? path.join(__dirname, "..", "scripts");
+  return process.env.SAICMOTOR_SCRIPTS ?? packageFile("scripts");
 }
 
 export function toKebab(s: string): string {

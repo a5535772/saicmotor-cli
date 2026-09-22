@@ -5,7 +5,7 @@ import {
   skillsAlreadyInstalled,
   SKILLS_REPO,
   __setExecSync,
-} from "../../scripts/postinstall.js";
+} from "../../src/install/skills";
 
 describe("installSkills export", () => {
   let execSyncMock: ReturnType<typeof vi.fn>;

@@ -99,7 +99,7 @@ npm config delete https-proxy --location=user
   npx skills rm saicmotor-attendance -g
   npx skills rm saicmotor-shared -g
 
-  # 确认没了
+  # 确认技能是否安装了
   npx skills ls -g
 
   # 重新注册
@@ -122,7 +122,36 @@ npm config delete https-proxy --location=user
 
 ---
 
-### 1.2 CLI 基础验证
+### 1.2 隔离包验证（registry 形态，必做）
+
+> GitHub tarball 是整仓库快照，会掩盖"registry tarball 缺 src/"类缺陷。必须用 `npm pack` 产物验证一次。
+
+```powershell
+cd D:\work\things\saicmotor-cli-all\saicmotor-cli
+
+# 1) 用 registry 形态包替换全局安装
+npm pack
+npm uninstall -g saicmotor-cli
+npm install -g --dangerously-allow-all-scripts (Resolve-Path .\saicmotor-cli-0.4.0.tgz).Path
+
+# 2) 脱离源码树执行（在用户主目录，不要在项目目录！）
+cd $env:USERPROFILE
+saicmotor leave applications submit --start-date 2026-09-21 --end-date 2026-09-22 --reason 年假 --dry-run --format pretty
+saicmotor attendance corrections submit --date 2026-09-21 --reason 忘记打卡 --dry-run --format pretty
+
+# 3) 已安装时应跳过，不重复注册
+saicmotor install
+```
+
+> **预期**：
+> - 两个 submit 均输出 `dryRun: true`，且有 `[script] ...前校验通过` 日志（说明加载的是编译脚本而非 .ts 源码）。
+> - 最后一条输出 `AI skills 已安装，跳过`。
+
+**截图位：➊-b 隔离包验证**
+
+---
+
+### 1.3 CLI 基础验证
 
 ```powershell
 saicmotor --help
@@ -381,7 +410,8 @@ npx skills rm saicmotor-shared -g
 | 0.1 | 清理本地残留 | | |
 | 0.2 | mock-server 启动（2 个端口） | | |
 | 1.1 | 安装成功 + postinstall 输出 | | ➊ |
-| 1.2 | --help / --version / install --help | | ➋ |
+| 1.2 | npm pack 隔离安装 + 两个 submit dry-run + install 跳过 | | ➊-b |
+| 1.3 | --help / --version / install --help | | ➋ |
 | 2.1 | 网关配置写入 | | |
 | 2.2 | 登录 + status | | ➌ |
 | 2.3 | 三种格式查询（leave + attendance） | | ➍ |

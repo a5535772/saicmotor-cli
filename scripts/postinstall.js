@@ -1,60 +1,14 @@
-// scripts/postinstall.js
-const { execSync: nodeExecSync } = require("child_process");
+#!/usr/bin/env node
+// scripts/postinstall.js — npm lifecycle 薄壳
+// 核心逻辑在 src/install/skills.ts（编译后 dist/src/install/skills.js）
+const path = require("path");
+const fs = require("fs");
 
-const SKILLS_REPO =
-  process.env.SAICMOTOR_SKILLS_REPO ||
-  require("../saicmotor.config.json").repo;
+const entry = path.join(__dirname, "..", "dist", "src", "install", "skills.js");
 
-// Injectable execSync — defaults to Node's built-in, overridable for testing
-let _execSync = nodeExecSync;
-
-function __setExecSync(fn) {
-  _execSync = fn;
+if (!fs.existsSync(entry)) {
+  console.warn("⚠ 未找到编译产物 dist/，跳过 skills 自动注册。请先运行 npm run build");
+  process.exit(0);
 }
 
-function skillsAlreadyInstalled() {
-  try {
-    const out = _execSync("npx -y skills ls -g", {
-      stdio: "pipe",
-      timeout: 30000,
-    });
-    return /^saicmotor-/m.test(out.toString());
-  } catch {
-    return false;
-  }
-}
-
-function installSkills({ force = false } = {}) {
-  if (!force && skillsAlreadyInstalled()) {
-    console.log("AI skills 已安装，跳过");
-    return;
-  }
-
-  try {
-    _execSync(`npx -y skills add ${SKILLS_REPO} --all -g`, {
-      stdio: "pipe",
-      timeout: 120000,
-    });
-    console.log("✓ AI skills 已注册");
-  } catch {
-    console.log(
-      `⚠ AI skills 注册失败，稍后可手动运行:\n` +
-        `  saicmotor install\n` +
-        `  或: npx skills add ${SKILLS_REPO} --all -g`
-    );
-  }
-}
-
-module.exports = {
-  installSkills,
-  skillsAlreadyInstalled,
-  SKILLS_REPO,
-  __setExecSync,
-};
-
-if (require.main === module) {
-  console.log("\nsaicmotor CLI 安装完成。");
-  installSkills();
-  console.log("  首次使用前请运行: saicmotor auth login");
-  console.log("  探索命令: saicmotor --help\n");
-}
+require(entry).runPostinstall();

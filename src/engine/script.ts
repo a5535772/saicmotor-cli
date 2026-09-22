@@ -1,31 +1,55 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Config } from "../config";
-import { scriptsDir } from "../config";
 import type { Service, Method } from "../schema/catalog";
 import type { RunResult } from "./run";
 import { SaicmotorError } from "./errors";
+import { distRoot, packageFile } from "../pkg-root";
 
 export interface ScriptContext {
   config: Config;
   service: Service;
   method: Method;
-  /** coerceFields 已处理过的参数值，脚本不重复解析 */
   values: Record<string, unknown>;
   dryRun: boolean;
-  /** 脚本内如需调用其他 API，可自行获取 token */
   ensureToken: () => Promise<string>;
 }
 
 export type ScriptFn = (ctx: ScriptContext) => Promise<RunResult>;
 
 export function scriptFileFor(serviceName: string, resourceName: string, methodName: string): string {
-  return path.join(scriptsDir(), serviceName, resourceName, `${methodName}.ts`);
+  return path.join(distRoot(), "scripts", serviceName, resourceName, `${methodName}.js`);
 }
 
+function firstExisting(files: string[]): string | null {
+  for (const file of files) {
+    if (fs.existsSync(file)) return file;
+  }
+  return null;
+}
+
+/**
+ * 脚本查找顺序：
+ * 1. SAICMOTOR_SCRIPTS 显式覆盖（测试/定制）：<dir>/<svc>/<res>/<method>.{js,ts}
+ * 2. 编译产物：dist/scripts/<svc>/<res>/<method>.js（安装形态）
+ * 3. 源码树：scripts/<svc>/<res>/<method>.ts（本地 tsx 开发）
+ */
 export function findScript(serviceName: string, resourceName: string, methodName: string): string | null {
-  const file = scriptFileFor(serviceName, resourceName, methodName);
-  return fs.existsSync(file) ? file : null;
+  const rel = path.join(serviceName, resourceName, methodName);
+
+  if (process.env.SAICMOTOR_SCRIPTS) {
+    const override = firstExisting([
+      path.join(process.env.SAICMOTOR_SCRIPTS, `${rel}.js`),
+      path.join(process.env.SAICMOTOR_SCRIPTS, `${rel}.ts`),
+    ]);
+    if (override) return override;
+  }
+
+  const compiled = path.join(distRoot(), "scripts", `${rel}.js`);
+  if (fs.existsSync(compiled)) return compiled;
+
+  const source = packageFile(path.join("scripts", `${rel}.ts`));
+  return fs.existsSync(source) ? source : null;
 }
 
 export async function executeScript(file: string, ctx: ScriptContext): Promise<RunResult> {

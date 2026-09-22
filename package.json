@@ -12,7 +12,7 @@
     "saicmotor.config.json"
   ],
   "scripts": {
-    "prepare": "node -e \"if(!require('fs').existsSync('dist/cli/index.js'))console.warn('⚠ dist/ 缺失，请运行 npm run build')\"",
+    "prepare": "node -e \"if(!require('fs').existsSync('dist/src/cli/index.js'))console.warn('⚠ dist/ 缺失，请运行 npm run build')\"",
     "prepublishOnly": "npm run build && npm test",
     "postinstall": "node scripts/postinstall.js || true",
     "build": "tsc -p tsconfig.json",

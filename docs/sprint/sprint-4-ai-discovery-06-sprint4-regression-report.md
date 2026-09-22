@@ -56,3 +56,20 @@
 - [ ] 阻塞性问题，需修复后重新验证
 
 **总结**：Sprint 4 全部 20 项验证中，18 项 ✅ 通过，1 项 ⚠️（npm v11 allow-scripts 阻止 postinstall），1 项 🟢（版本号不一致）。所有自动化测试（16 files, 66 tests）零回归。核心交付物（postinstall、install 命令、bin shim 架构、配置中心化、文档）均验证通过。npm v11 的 allow-scripts 机制是已知的 npm 生态变化，建议在文档中提供指引即可，不阻塞发布。
+
+---
+
+## 后续修复记录（2026-09-22）
+
+人工验证发现脚本覆盖机制在全局安装后失效（详见教训 `2026-09-22-script-override-global-install-broken.md`），当日完成修复并重新验证：
+
+| 事项 | 结果 |
+|------|:---:|
+| 统一编译布局：src/scripts → `dist/src` + `dist/scripts` | ✅ |
+| findScript 优先加载编译产物，源码 .ts 仅本地 dev 回退 | ✅ |
+| 新增 `src/pkg-root.ts` 包根定位 | ✅ |
+| postinstall 逻辑迁入 `src/install/skills.ts`，lifecycle 壳薄化 | ✅ |
+| 连带修复：skills ls ANSI 颜色码导致"已安装"误判、重复注册 | ✅ |
+| 自动化测试：16 files / **67 tests** 全绿 | ✅ |
+| npm pack（无 src/）→ 全局安装 tgz → 脱离源码树两个 submit `--dry-run` | ✅ |
+| `saicmotor install` 正确输出"AI skills 已安装，跳过" | ✅ |

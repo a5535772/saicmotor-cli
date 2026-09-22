@@ -5,7 +5,7 @@
 const path = require("path");
 const fs = require("fs");
 
-const entry = path.join(__dirname, "..", "dist", "cli", "index.js");
+const entry = path.join(__dirname, "..", "dist", "src", "cli", "index.js");
 
 if (!fs.existsSync(entry)) {
   const config = require("../saicmotor.config.json");

@@ -6,6 +6,7 @@ import { runMethod } from "../engine/run";
 import { formatJson, formatTable, formatEnvelope } from "../engine/output";
 import { registerAuth } from "./auth";
 import { handleError } from "./error";
+import { installSkills } from "../install/skills";
 
 const program = new Command();
 program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.4.0");
@@ -53,7 +54,6 @@ program
   .description("安装/重装 AI skills 到所有已安装的 AI 工具")
   .option("--force", "强制重新安装（即使已安装）")
   .action((opts) => {
-    const { installSkills } = require("../../scripts/postinstall.js");
     installSkills({ force: opts.force || false });
   });
 
