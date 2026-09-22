@@ -16,6 +16,8 @@ saicmotor leave balance query          # 查年假余额
 saicmotor attendance records query     # 查打卡记录
 ```
 
+> **登录方式**：生产环境默认走飞书 SSO（敲 `saicmotor auth login` 自动打开浏览器授权）。本地开发可用 `SAICMOTOR_AUTH_TYPE=password` 切回账号密码，详见[开发者指南](DEVELOPER.md#切回-password-模式本地开发)。
+
 ---
 
 ## 环境要求
@@ -58,7 +60,34 @@ npx skills add a5535772/saicmotor-cli --all -g
 
 ## 安装后——配置 & 登录
 
-安装完成后，**配置网关地址**：
+安装完成后，通常不需要额外配置即可登录。
+
+### 生产环境（飞书 SSO，默认）
+
+直接敲命令，会自动打开浏览器跳转飞书授权：
+
+```bash
+saicmotor auth login
+```
+
+浏览器授权完成后 token 自动缓存，后续命令无需再次登录。
+
+### 本地开发 / 无浏览器环境
+
+通过环境变量切回账号密码模式：
+
+```bash
+# Windows PowerShell
+$env:SAICMOTOR_AUTH_TYPE="password"
+saicmotor auth login --username <工号> --password <密码>
+
+# Mac / Linux / Git Bash
+SAICMOTOR_AUTH_TYPE=password saicmotor auth login --username <工号> --password <密码>
+```
+
+### 配置网关地址（可选）
+
+如果网关不在默认的 `localhost:8081`，写入配置文件：
 
 ```bash
 # 在 ~/.saicmotor/config.json 里写入网关地址
@@ -67,12 +96,6 @@ npx skills add a5535772/saicmotor-cli --all -g
 # 也可用环境变量（优先级最高）
 set SAICMOTOR_GATEWAY=http://你的网关地址    # Windows PowerShell
 export SAICMOTOR_GATEWAY=http://你的网关地址  # Mac / Linux
-```
-
-然后**登录**：
-
-```bash
-saicmotor auth login --username <你的工号> --password <你的密码>
 ```
 
 验证是否成功：
@@ -115,8 +138,10 @@ saicmotor --help
 **第 4 步 — 登录**
 
 ```bash
-saicmotor auth login --username <工号> --password <密码>
+saicmotor auth login
 ```
+
+> 生产环境默认走飞书 SSO，浏览器自动打开授权。本地开发用 `SAICMOTOR_AUTH_TYPE=password saicmotor auth login --username <工号> --password <密码>`。
 
 **第 5 步 — 验证可用**
 

@@ -27,11 +27,16 @@ const pkgConfig = loadPackageConfig();
 exports.DEFAULT_CONFIG = {
     gateway: pkgConfig.defaults?.gateway ?? "http://localhost:8081",
     auth: {
-        type: "password",
+        type: "exchange",
         loginPath: "/auth/login",
         tokenPath: "data.token",
         tokenHeader: "Authorization",
         tokenPrefix: "Bearer",
+        startPath: "/auth/exchange/start",
+        exchangePath: "/auth/exchange",
+        loopbackHost: "127.0.0.1",
+        loopbackPort: 3000,
+        callbackTimeoutMs: 120000,
     },
 };
 function saicmotorDir() {
@@ -49,7 +54,11 @@ function loadConfig() {
         /* use defaults */
     }
     const gateway = process.env.SAICMOTOR_GATEWAY ?? user.gateway ?? exports.DEFAULT_CONFIG.gateway;
-    const auth = { ...exports.DEFAULT_CONFIG.auth, ...(user.auth ?? {}) };
+    const auth = {
+        ...exports.DEFAULT_CONFIG.auth,
+        ...(user.auth ?? {}),
+        ...(process.env.SAICMOTOR_AUTH_TYPE ? { type: process.env.SAICMOTOR_AUTH_TYPE } : {}),
+    };
     return { gateway, auth };
 }
 function catalogDir() {

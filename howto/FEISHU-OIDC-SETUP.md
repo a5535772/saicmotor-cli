@@ -75,7 +75,7 @@ setx FEISHU_APP_SECRET "xxxxxxxxxxxxxx"
 |---|---|
 | 回调报 `redirect_uri_mismatch` | 飞书后台重定向 URL 与实际 `http://localhost:<port>/callback` 不一致；动态端口场景改用固定端口 3000 |
 | 授权页提示应用不可用 | 版本未发布/审批未通过/当前用户不在可用范围 |
-| exchange 报"未找到对应员工" | 飞书返回字段映射不到工号：检查网关 `user-id-field` 配置，或在测试用户映射表里加一条 |
+| exchange 报"未找到对应员工" | 飞书 `name` 在网关用户表里找不到对应 `username`。在网关 `application.yml` 的 users 列表加一条：`{ username: 飞书name, password: "123456", user-id: ascii名, email: ... }` |
 | 浏览器没自动打开 | 手动复制终端打印的 authUrl；远程/无桌面环境属于后续手动兜底范围（本期未做） |
 
 ## 7. POC 结束后清理

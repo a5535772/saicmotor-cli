@@ -43,3 +43,4 @@ coverage/
 # Optional npm cache
 .npm
 .eslintcache
+howto/FEISHU-OIDC-DATA.md

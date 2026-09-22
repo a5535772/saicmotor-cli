@@ -34,7 +34,7 @@ const pkgConfig = loadPackageConfig();
 export const DEFAULT_CONFIG: Config = {
   gateway: pkgConfig.defaults?.gateway ?? "http://localhost:8081",
   auth: {
-    type: "password",
+    type: "exchange",
     loginPath: "/auth/login",
     tokenPath: "data.token",
     tokenHeader: "Authorization",
@@ -63,7 +63,11 @@ export function loadConfig(): Config {
     /* use defaults */
   }
   const gateway = process.env.SAICMOTOR_GATEWAY ?? user.gateway ?? DEFAULT_CONFIG.gateway;
-  const auth = { ...DEFAULT_CONFIG.auth, ...(user.auth ?? {}) };
+  const auth = {
+    ...DEFAULT_CONFIG.auth,
+    ...(user.auth ?? {}),
+    ...(process.env.SAICMOTOR_AUTH_TYPE ? { type: process.env.SAICMOTOR_AUTH_TYPE as "password" | "exchange" } : {}),
+  };
   return { gateway, auth };
 }
 

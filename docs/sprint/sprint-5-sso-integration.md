@@ -1,6 +1,6 @@
 # Sprint 5 — 真实 SSO 打通
 
-> **状态**: ✅ 开发完成，待人工端到端验证 | **时间**: 2026-09-22
+> **状态**: ✅ 开发+验证完成 | **时间**: 2026-09-22
 
 ## 目标
 
@@ -33,13 +33,34 @@
 | 8 | IdpProvider 接口 + 飞书实现 | ✅ | a7c28da |
 | 9 | /auth/exchange start + exchange 接口 | ✅ | 4176235 |
 | — | StateStore @Autowired 修复 | ✅ | 99aebbc |
-| 10 | 人工端到端验证 | ⬜ | 待执行 |
+| 10 | 人工端到端验证 | ✅ | 7/7 全通过，email→union_id 兜底 |
 
-## 待办项
+### 匹配策略（最终版）
 
-- [ ] 按 [飞书对接手册](../../howto/FEISHU-OIDC-SETUP.md) 申请飞书企业自建应用
-- [ ] 按 [人工验证文档](./sprint-5-sso-manual-verification.md) 执行端到端验证
-- [ ] 验证通过后更新 ARCHITECTURE.md §7 exchange 为 ✅ 已实现
+飞书 `user_info` 返回 `name` 即公司域账号。ExchangeController 简化：
+
+```java
+// 1) 有 email 先试 email 匹配
+User user = userDirectory.findByEmail(idpUser.email());
+// 2) 没有则 name 匹配 username
+if (user == null) user = userDirectory.findByUsername(idpUser.name());
+```
+
+- `SAICMOTOR_AUTH_TYPE` 环境变量或 `~/.saicmotor/config.json` 可切回 `password`
+
+### 网关用户映射
+
+网关 `username` 即飞书 name。`user-id` 需为 ASCII（`X-User-Id` 头传中文会乱码），用于转发到 backend。
+
+## 默认认证模式
+
+**生产默认 `exchange`**（飞书 SSO）。本地开发切 password 三种方式：
+
+1. 环境变量：`SAICMOTOR_AUTH_TYPE=password`
+2. 用户配置：`echo '{"auth":{"type":"password"}}' > ~/.saicmotor/config.json`
+3. 优先级：环境变量 > config.json > 默认 exchange
+
+详见 [开发者指南 §3.3](../../howto/DEVELOPER.md)。
 
 ## 相关文档
 

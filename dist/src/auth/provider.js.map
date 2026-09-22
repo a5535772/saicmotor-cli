@@ -1,0 +1,1 @@
+{"version":3,"file":"provider.js","sourceRoot":"","sources":["../../../src/auth/provider.ts"],"names":[],"mappings":";;AAOA,gDAGC;AATD,yCAA8C;AAC9C,yCAA8C;AAK9C,SAAgB,kBAAkB,CAAC,MAAc;IAC/C,IAAI,MAAM,CAAC,IAAI,CAAC,IAAI,KAAK,UAAU;QAAE,OAAO,IAAI,2BAAgB,CAAC,MAAM,CAAC,CAAC;IACzE,OAAO,IAAI,2BAAgB,CAAC,MAAM,CAAC,CAAC;AACtC,CAAC"}

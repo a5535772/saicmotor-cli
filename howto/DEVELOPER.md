@@ -25,7 +25,7 @@ npm run build      # TypeScript → dist/
 
 ```bash
 npm run dev        # tsx 热执行，免编译 → 改完就生效
-npm test           # 运行全部测试（66 个）
+npm test           # 运行全部测试（72 个）
 npm run build      # 完整编译
 ```
 
@@ -148,6 +148,7 @@ saicmotor.config.json 内置默认
 | `SAICMOTOR_USERNAME` | 用户名（CI/CD） | 替代文件 |
 | `SAICMOTOR_PASSWORD` | 密码（CI/CD） | 替代文件 |
 | `SAICMOTOR_HOME` | 数据目录 | 默认 `~/.saicmotor` |
+| `SAICMOTOR_AUTH_TYPE` | 认证模式（`password` \| `exchange`） | 最高 |
 | `SAICMOTOR_CATALOG` | catalog 目录 | 默认 `catalog/services/` |
 | `SAICMOTOR_SCRIPTS` | scripts 目录 | 默认 `scripts/` |
 
@@ -275,9 +276,11 @@ npx vitest test/unit/config.test.ts   # 单文件
 
 | 目录 | 内容 | 数量 |
 |------|------|:---:|
-| `test/unit/` | 引擎模块单测（12 模块） | 文件级 |
-| `test/integration/` | 网关端到端 | 2 文件 |
-| `test/scripts/` | postinstall 脚本测试 | 1 文件 |
+| `test/unit/` | 引擎模块单测（16 模块） | 72 个 |
+| `test/integration/` | 网关端到端 | 8 个测试 |
+| `test/scripts/` | postinstall 脚本测试 | 6 个测试 |
+
+> Gateway 侧另有 90 个 Java 测试（`saicmotor-cli-mock-gateway` 项目），覆盖 auth、token、exchange 全流程。
 
 ### 写测试的要点
 
@@ -333,6 +336,24 @@ npm unlink
 ### 新增认证方式
 
 改 `src/config.ts` 的 `AuthConfig` 接口 + `src/auth/` 模块。catalog 和 engine 不动。
+
+### 切回 password 模式（本地开发）
+
+生产默认走 exchange SSO。本地开发测试不想走飞书授权时：
+
+**方式一（推荐）：环境变量**
+
+```bash
+SAICMOTOR_AUTH_TYPE=password node dist/src/cli/index.js auth login --username zhangsan --password 123456
+```
+
+**方式二：用户配置**
+
+```bash
+echo '{"auth":{"type":"password"}}' > ~/.saicmotor/config.json
+```
+
+优先级：`SAICMOTOR_AUTH_TYPE` 环境变量 > `~/.saicmotor/config.json` > 默认 `exchange`。本地测试后删掉 config.json 或 unset 环境变量即恢复默认。
 
 ### 修改默认网关
 

@@ -7,7 +7,7 @@ import { loadConfig, saicmotorDir, scriptsDir } from "../../src/config";
 describe("config", () => {
   let tmp: string;
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), "saicmotor-")); process.env.SAICMOTOR_HOME = tmp; });
-  afterEach(() => { delete process.env.SAICMOTOR_HOME; delete process.env.SAICMOTOR_GATEWAY; delete process.env.SAICMOTOR_SCRIPTS; fs.rmSync(tmp, { recursive: true, force: true }); });
+  afterEach(() => { delete process.env.SAICMOTOR_HOME; delete process.env.SAICMOTOR_GATEWAY; delete process.env.SAICMOTOR_SCRIPTS; if (process.env.SAICMOTOR_AUTH_TYPE_RESTORE) { process.env.SAICMOTOR_AUTH_TYPE = process.env.SAICMOTOR_AUTH_TYPE_RESTORE; delete process.env.SAICMOTOR_AUTH_TYPE_RESTORE; } fs.rmSync(tmp, { recursive: true, force: true }); });
 
   it("defaults gateway to localhost:8081", () => {
     expect(loadConfig().gateway).toBe("http://localhost:8081");
@@ -29,6 +29,11 @@ describe("config", () => {
   });
 
   it("supports exchange auth defaults via user config", () => {
+    // vitest env defaults to password; temporarily unset so user config.json can supply exchange
+    if (process.env.SAICMOTOR_AUTH_TYPE) {
+      process.env.SAICMOTOR_AUTH_TYPE_RESTORE = process.env.SAICMOTOR_AUTH_TYPE;
+      delete process.env.SAICMOTOR_AUTH_TYPE;
+    }
     fs.writeFileSync(
       path.join(process.env.SAICMOTOR_HOME!, "config.json"),
       JSON.stringify({ auth: { type: "exchange", loopbackPort: 3000, callbackTimeoutMs: 90000 } })
