@@ -27,4 +27,17 @@ describe("config", () => {
     process.env.SAICMOTOR_SCRIPTS = "/tmp/scripts";
     expect(scriptsDir()).toBe("/tmp/scripts");
   });
+
+  it("supports exchange auth defaults via user config", () => {
+    fs.writeFileSync(
+      path.join(process.env.SAICMOTOR_HOME!, "config.json"),
+      JSON.stringify({ auth: { type: "exchange", loopbackPort: 3000, callbackTimeoutMs: 90000 } })
+    );
+    const cfg = loadConfig();
+    expect(cfg.auth.type).toBe("exchange");
+    expect(cfg.auth.startPath).toBe("/auth/exchange/start");
+    expect(cfg.auth.exchangePath).toBe("/auth/exchange");
+    expect(cfg.auth.loopbackPort).toBe(3000);
+    expect(cfg.auth.callbackTimeoutMs).toBe(90000);
+  });
 });

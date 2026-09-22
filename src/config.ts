@@ -4,11 +4,16 @@ import path from "node:path";
 import { packageFile } from "./pkg-root";
 
 export interface AuthConfig {
-  type: "password";
+  type: "password" | "exchange";
   loginPath: string;
   tokenPath: string;
   tokenHeader: string;
   tokenPrefix: string;
+  startPath: string;
+  exchangePath: string;
+  loopbackHost: string;
+  loopbackPort: number;
+  callbackTimeoutMs: number;
 }
 
 export interface Config {
@@ -34,6 +39,11 @@ export const DEFAULT_CONFIG: Config = {
     tokenPath: "data.token",
     tokenHeader: "Authorization",
     tokenPrefix: "Bearer",
+    startPath: "/auth/exchange/start",
+    exchangePath: "/auth/exchange",
+    loopbackHost: "127.0.0.1",
+    loopbackPort: 3000,
+    callbackTimeoutMs: 120000,
   },
 };
 
