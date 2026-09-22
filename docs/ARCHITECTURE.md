@@ -373,9 +373,9 @@ flowchart LR
 
 ## 7. 认证模型
 
-当前只实现了 `password` 类型。Sprint 5 会扩展为可插拔架构。
+当前已实现 `password` 和 `exchange` 两种类型。架构已重构为可插拔。
 
-### 7.1 当前（已实现）：password 直登
+### 7.1 已实现：password 直登
 
 ```mermaid
 sequenceDiagram
@@ -407,16 +407,58 @@ sequenceDiagram
     end
 ```
 
-### 7.2 未来（Sprint 5）：可插拔 auth
+### 7.2 可插拔 auth
 
 | type | 场景 | 流程 | 状态 |
 |------|------|------|------|
 | `password` | 单系统直登 | username + password → token | ✅ 已实现 |
-| `redirect` | CAS 式 SSO | 请求入口 → 302 → 带 ticket 跳回 → 换 token | 🟡 Sprint 5 |
-| `exchange` | OIDC 式 | code → SSO token → 系统 token | 🟡 Sprint 5 |
-| `prefetch` | 先取页面拿 token | GET 某页 → 解析页面提取 token → 注入后续请求 | 🟡 Sprint 5 |
+| `exchange` | OIDC 式 | CLI 起 loopback → 开浏览器 IdP 授权 → code → 网关换 token | ✅ 已实现（飞书 POC） |
+| `redirect` | CAS 式 SSO | 请求入口 → 302 → 带 ticket 跳回 → 换 token | 🔮 预留 |
+| `prefetch` | 先取页面拿 token | GET 某页 → 解析页面提取 token → 注入后续请求 | 🔮 预留 |
 
 **设计原则：换认证方式只改 auth 配置，catalog 和 engine 不动。**
+
+#### exchange（OIDC 式）流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant CLI as saicmotor CLI
+    participant LB as localhost 临时服务
+    participant GW as 网关
+    participant IdP as 飞书(IdP)
+    participant SYS as 业务系统
+
+    U->>CLI: saicmotor auth login
+    CLI->>GW: GET /auth/exchange/start?port=3000
+    GW-->>CLI: { authUrl, state }
+    CLI->>LB: 监听 127.0.0.1:3000
+    CLI->>U: 打开浏览器→IdP 授权页
+    U->>IdP: 登录/授权
+    IdP-->>LB: /callback?code=xxx&state=yyy
+    LB-->>U: "登录成功，可关闭本页"
+    CLI->>GW: POST /auth/exchange { code, state }
+    GW->>IdP: app_token + code 换用户身份
+    IdP-->>GW: email/name
+    GW->>GW: 映射内部 userId，签发网关 token
+    GW-->>CLI: { token }
+    CLI->>CLI: writeToken
+    CLI->>GW: 业务请求 Bearer token
+    GW->>SYS: 校验 + 注入 X-User-Id
+```
+
+#### 网关侧 IdpProvider 抽象
+
+```java
+public interface IdpProvider {
+    String buildAuthorizeUrl(String state, String redirectUri);
+    IdpUser exchangeCode(String code, String redirectUri);
+}
+```
+
+- `FeishuIdpProvider`：当前 POC 实现（飞书网页授权）。app_id/secret 从环境变量注入，不落库。
+- 未来切换公司 OIDC：新增 `OidcIdpProvider`，通过 `.well-known/openid-configuration` 自动发现。CLI 与业务系统零改动。
 
 ---
 
