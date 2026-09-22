@@ -1,20 +1,27 @@
 import type { Command } from "commander";
 import { loadConfig } from "../config";
 import { writeCredentials, clearCredentials, clearToken, readToken } from "../auth/store";
-import { loginWithPassword } from "../auth/password";
+import { createAuthProvider } from "../auth/provider";
+import { SaicmotorError } from "../engine/errors";
 import { handleError } from "./error";
 
 export function registerAuth(program: Command): void {
   const authCmd = program.command("auth").description("登录认证");
 
   authCmd.command("login")
-    .requiredOption("--username <u>", "工号")
-    .requiredOption("--password <p>", "密码")
-    .action(async (opts: { username: string; password: string }) => {
+    .option("--username <u>", "工号（仅 password 模式需要）")
+    .option("--password <p>", "密码（仅 password 模式需要）")
+    .action(async (opts: { username?: string; password?: string }) => {
       try {
         const config = loadConfig();
-        writeCredentials({ username: opts.username, password: opts.password });
-        const token = await loginWithPassword(config, opts.username, opts.password);
+        clearToken();
+        if (config.auth.type === "password") {
+          if (!opts.username || !opts.password) {
+            throw new SaicmotorError("validation", "password 模式需要 --username 和 --password");
+          }
+          writeCredentials({ username: opts.username, password: opts.password });
+        }
+        const token = await createAuthProvider(config).login();
         console.log(`已登录，token 已缓存（${token.slice(0, 8)}…）`);
       } catch (e) { handleError(e); }
     });
