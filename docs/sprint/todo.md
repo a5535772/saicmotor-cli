@@ -67,6 +67,26 @@
 
 ---
 
+## [ ] 3. [BUG] 全局安装时 postinstall 输出被 npm 吞掉，应显示出来
+
+**提出时间**：2026-09-22
+**优先级**：🟢 低
+**类型**：Bug（体验/可观测性）
+**现象**：`npm install -g`（npm v11）时 postinstall 实际执行了，但其 stdout（"saicmotor CLI 安装完成"、"✓ AI skills 已注册"、登录/帮助提示）完全不显示，用户只看到 `added N packages`，容易误判为 skills 没注册。
+
+**期望**：全局安装结束后，postinstall 的提示信息能正常呈现给用户。
+
+**排查/修复方向（实施时先验证）**：
+
+- [ ] 确认是 npm v11 对全局 lifecycle stdout 的处理机制，而非脚本自身 `stdio: "pipe"` 导致（注意：`installSkills` 内部 execSync 的 pipe 是刻意的，被吞的是 **postinstall 进程自身的 console.log**）
+- [ ] 调研 npm 是否提供开关/配置回传全局脚本输出（不同 npm 版本行为可能不同，实测 `--loglevel`、`--foreground-scripts` 等标志）
+- [ ] 若 npm 层面无法可靠解决，考虑替代呈现：安装后首次运行 `saicmotor` 时展示一次性欢迎/注册状态提示（写入标记文件，只显示一次）
+- [ ] 至少保证文档统一告知"以 `npx skills ls -g` 为准，不以安装日志判断成败"（教训文档已覆盖，本项为产品体验修复）
+
+**验收标准**：全新环境全局安装后，无需手动执行任何验证命令，即可在安装输出中看到 postinstall 的执行结果或等价的成功提示。
+
+---
+
 ## 已完成
 
 （暂无）
