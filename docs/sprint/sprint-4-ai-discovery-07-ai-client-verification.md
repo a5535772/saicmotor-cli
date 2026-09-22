@@ -3,8 +3,8 @@
 > **验证目标**：以"真实用户 + AI Agent"视角走完整链路——**手动清理 → 安装 → AI 自主发现 skills → 按规则编排调用 → 卸载 → 残留观察与手动清理**。
 >
 > **验证方式（重要）**：
-> - 人**只发自然语言**（"帮我清干净"、"帮我装上"、"帮我查年假"……），**不手工敲任何 saicmotor/npm 命令**。
-> - 所有命令由 AI 客户端通过其工具（Bash/Shell）执行。本册给出的命令仅作为"期望 AI 执行什么"的对照和排障依据。
+> - **阶段 2 初始清理由人工手动完成**——此时尚未安装、也没有任何 skill/HTTP 指引，AI 不具备完成该操作的知识。
+> - 从阶段 3 起，人**只发自然语言**（"帮我装上"、"帮我查年假"……），不手工敲命令；命令由 AI 客户端通过其工具（Bash/Shell）执行。本册命令仅作为对照和排障依据。
 > - Claude Code 与 CodeBuddy **各完整走一遍**（建议先 Claude Code，CodeBuddy 回归可复用同一脚本）。
 >
 > **前置条件**：
@@ -56,54 +56,64 @@ mvnw spring-boot:run
 
 ---
 
-## 阶段 2 — 初始手动清理（AI 执行，人只发指令）
+## 阶段 2 — 初始手动清理（人工执行）
 
 > 目的：从**绝对干净**的状态开始，排除"以前装过"的干扰。
-> 此时 AI 没有任何 saicmotor skill——它的知识来源是仓库里的**权威卸载文档** `howto/INSTALL.md`（§卸载），验证的是"AI 能否按文档执行"，而不是人复述命令。
+> **这一步由你本人在 PowerShell 中手工完成**——此时 saicmotor 未安装、AI 没有任何相关 skill 或可参考的在线指引，理论上 AI 不知道要做哪些操作。
 
-**新开客户端会话**（在 saicmotor-cli 项目目录启动，使其能读到文档文件；如不在项目目录，话术中给出文档绝对路径）：
+打开 **PowerShell**，逐条执行：
 
 ```powershell
-cd D:\work\things\saicmotor-cli-all\saicmotor-cli
-claude          # CodeBuddy 侧改为 codebuddy
-```
-
-**对 AI 说：**
-
-> "先读一下 howto/INSTALL.md 里的'卸载'章节，然后严格按文档把 saicmotor 全部卸载干净：卸载 npm 全局包、清除本地数据、清除四个 AI skills 和客户端目录里可能残留的死链接。"
-
-**期望 AI 执行的命令（对照用）：**
-
-```bash
+# 1. 卸载 npm 全局包（没装过会报 not installed，忽略即可）
 npm uninstall -g saicmotor-cli
-rm -rf ~/.saicmotor
+
+# 2. 清除本地数据（config + 凭据缓存）
+Remove-Item -Recurse -Force $env:USERPROFILE\.saicmotor -ErrorAction SilentlyContinue
+
+# 3. 清除四个 AI skills
 npx -y skills rm saicmotor-suite -g
 npx -y skills rm saicmotor-leave -g
 npx -y skills rm saicmotor-attendance -g
 npx -y skills rm saicmotor-shared -g
 ```
 
-**清理验证（让 AI 按文档自己检查并汇报结果），对它说：**
+### 清理验证（人工逐项确认）
 
-> "按 INSTALL.md 卸载章节最后的验证步骤逐项检查，把每条命令的实际结果告诉我，确认零残留。"
+```powershell
+# 命令应不存在
+saicmotor --version
 
-**期望对照：**
+# skills 列表应无 saicmotor
+npx -y skills ls -g
 
-```bash
-saicmotor --version          # command not found
-npx -y skills ls -g          # 无 saicmotor 条目
-ls ~/.claude/skills | grep -i saic      # 无输出
-ls ~/.codebuddy/skills | grep -i saic   # 无输出
-ls ~/.agents/skills | grep -i saic      # 无输出
+# 各目录应无 saicmotor 残留（无输出即干净）
+Get-ChildItem $env:USERPROFILE\.agents\skills | Where-Object Name -match saic
+Get-ChildItem $env:USERPROFILE\.claude\skills | Where-Object Name -match saic
+Get-ChildItem $env:USERPROFILE\.codebuddy\skills | Where-Object Name -match saic
+Test-Path $env:USERPROFILE\.saicmotor
 ```
 
-> **通过判据**：AI 实际执行了上述检查（而不是嘴上说"应该干净了"），并汇报四处均无残留。有死链接残留时让它一并删除。
+> **通过判据**：
+> - `saicmotor --version` 提示无法识别。
+> - skills 列表与三个目录均无 saicmotor 条目；`Test-Path` 返回 `False`。
+> - 若客户端目录留下指向中央仓的死链接，手工删除：
+>   ```powershell
+>   Remove-Item $env:USERPROFILE\.claude\skills\saicmotor-* -Force
+>   Remove-Item $env:USERPROFILE\.codebuddy\skills\saicmotor-* -Force
+>   ```
 
 ---
 
 ## 阶段 3 — 安装（AI 执行）
 
-在**同一个会话**里对 AI 说：
+**新开客户端会话**（建议在非项目目录，如 `%USERPROFILE%`）：
+
+```powershell
+cd $env:USERPROFILE
+claude          # CodeBuddy 侧改为 codebuddy
+```
+
+对 AI 说：
 
 > "帮我全局安装最新的 saicmotor-cli，从 GitHub 安装：npm install -g 加 --dangerously-allow-all-scripts，地址 https://github.com/a5535772/saicmotor-cli/tarball/master 。如果网络超时，就在命令前加 HTTP_PROXY 和 HTTPS_PROXY 环境变量，代理 http://127.0.0.1:7897 。"
 
