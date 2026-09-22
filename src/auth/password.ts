@@ -3,7 +3,7 @@ import { SaicmotorError } from "../engine/errors";
 import { send } from "../engine/http";
 import { getByPath } from "../engine/extract";
 import { writeToken, readCredentials } from "./store";
-import type { AuthProvider } from "./provider";
+import type { AuthProvider } from "./provider-types";
 
 export class PasswordProvider implements AuthProvider {
   constructor(private readonly config: Config) {}
