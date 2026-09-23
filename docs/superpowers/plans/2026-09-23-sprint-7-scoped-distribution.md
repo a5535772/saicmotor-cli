@@ -240,8 +240,11 @@ git commit -m "feat: postinstall 在 npx 场景跳过 skills 注册"
 - `npx saicmotor-cli` → `npx @saicmotor/cli@latest`
 - `github:a5535772/saicmotor-cli` → `@saicmotor/cli`
 
-并在安装命令前补充 scoped registry 配置说明：
+并在安装命令前补充说明（优先 `--registry` flag，备选 .npmrc scoped config）：
 ```bash
+# 主推方式：--registry flag
+npm install -g @saicmotor/cli --registry=http://localhost:4873
+# 备选：长期固定配置
 npm config set @saicmotor:registry http://localhost:4873
 ```
 
@@ -252,8 +255,7 @@ npm config set @saicmotor:registry http://localhost:4873
 # 安装 saicmotor CLI
 
 ```bash
-npm config set @saicmotor:registry http://localhost:4873
-npm install -g @saicmotor/cli
+npm install -g @saicmotor/cli --registry=http://localhost:4873
 saicmotor --version
 ```
 验证：
@@ -263,7 +265,6 @@ saicmotor --help
 失败时手动注册 skills：
 ```bash
 saicmotor install
-```
 ```
 > 端点 `http://localhost:4873` 为 POC 占位，替换为内部 registry 地址后即可发布到内网页面。
 
@@ -311,8 +312,7 @@ Expected: 发布成功；`dist-tag ls` 显示 `latest: 0.4.0`。
 Run（在一个临时目录、不依赖任何已有全局安装）:
 ```bash
 cd "$(mktemp -d)"
-npm config set @saicmotor:registry http://localhost:4873
-npx @saicmotor/cli@latest --version
+npx @saicmotor/cli@latest --version --registry=http://localhost:4873
 ```
 Expected: 输出 `0.4.0`；期间**不产生** skills 注册输出（npx 跳过 postinstall 重量操作）。
 
@@ -320,7 +320,7 @@ Expected: 输出 `0.4.0`；期间**不产生** skills 注册输出（npx 跳过 
 
 Run:
 ```bash
-npm install -g @saicmotor/cli
+npm install -g @saicmotor/cli --registry=http://localhost:4873
 saicmotor --version
 ```
 Expected: 输出 `0.4.0`；postinstall 正常触发（打印"saicmotor CLI 安装完成"与 skills 注册结果）。
