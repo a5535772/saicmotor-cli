@@ -11,6 +11,7 @@
 - Node.js ≥ 16（推荐 20+）
 - npm ≥ 9
 - Git
+- Docker Desktop（本地 registry 调试用）
 
 ### 克隆并安装
 
@@ -19,6 +20,59 @@ git clone https://github.com/a5535772/saicmotor-cli.git
 cd saicmotor-cli
 npm install        # 安装依赖（commander + zod + TypeScript + vitest）
 npm run build      # TypeScript → dist/
+```
+
+### 1.0 本地 npm registry（Verdaccio）
+
+S7 起 `@saicmotor/cli` 通过内部 npm registry 分发，不再走 GitHub。本地开发调试时用 Docker 跑 Verdaccio 模拟这套流程。
+
+#### 启动 Verdaccio
+
+```bash
+docker run -d --name verdaccio -p 4873:4873 verdaccio/verdaccio
+```
+
+浏览器打开 `http://localhost:4873`，能看到 Verdaccio 界面即成功。
+
+#### 创建用户并写入 token
+
+```bash
+# 通过 API 创建用户（admin / 123456）
+curl -X PUT -H "Content-Type: application/json" \
+  -d '{"name":"admin","password":"123456"}' \
+  http://localhost:4873/-/user/org.couchdb.user:admin
+```
+
+返回 JSON 中含 `token` 字段，将其写入 `~/.npmrc`：
+
+```bash
+echo //localhost:4873/:_authToken=<返回的 token> >> ~/.npmrc
+```
+
+> **为什么要写 `~/.npmrc`**：用户安装 `@saicmotor/cli` 时用 `--registry=<地址>` 参数指定 registry，但 **发布**（`npm publish`）需要认证，token 必须通过 `.npmrc` 提供。写全局 `~/.npmrc` 后该终端的 `npm publish --registry=http://localhost:4873` 无需每次登录。
+
+#### 发版到本地 registry
+
+```bash
+npm publish --registry=http://localhost:4873
+```
+
+#### 模拟用户安装
+
+```bash
+# npx（首选）
+npx @saicmotor/cli@latest --registry=http://localhost:4873
+
+# 全局安装
+npm install -g @saicmotor/cli --registry=http://localhost:4873
+```
+
+#### 停止/清理
+
+```bash
+docker stop verdaccio    # 暂停
+docker start verdaccio   # 恢复
+docker rm -f verdaccio   # 彻底删除（数据不保留）
 ```
 
 ### 本地开发
