@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   installSkills,
+  runPostinstall,
   __setExecSync,
 } from "../../src/install/skills";
 
@@ -121,5 +122,18 @@ describe("installSkills", () => {
       "npx -y skills add my-org/private-repo --all -g",
       { stdio: "pipe", timeout: 120000 }
     );
+  });
+
+  it("runPostinstall skips skill registration under npx", () => {
+    vi.stubEnv("npm_command", "exec");
+    execSyncMock.mockImplementation(() => {
+      throw new Error("should not be called");
+    });
+
+    runPostinstall();
+
+    expect(consoleLogSpy).toHaveBeenCalledWith("npx 模式，跳过 skills 自动注册");
+    expect(execSyncMock).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 });
