@@ -1,4 +1,4 @@
-# saicmotor-cli 开发者指南
+# @saicmotor/cli 开发者指南
 
 > 面向接手此项目的开发者——如何搭建环境、新增业务系统、添加 skill、编写脚本覆盖。
 
@@ -107,8 +107,8 @@ saicmotor-cli/
 
 ```json
 {
-  "repo": "a5535772/saicmotor-cli",
-  "installUrl": "https://github.com/a5535772/saicmotor-cli/tarball/master",
+  "repo": "@saicmotor/cli",
+  "installUrl": "npm install -g @saicmotor/cli --registry=http://localhost:4873",
   "repository": "https://github.com/a5535772/saicmotor-cli",
   "defaults": {
     "gateway": "http://localhost:8081"
@@ -304,7 +304,7 @@ npm run build    # tsc -p tsconfig.json → dist/
 
 ```bash
 # 1. 先删旧版
-npm uninstall -g saicmotor-cli
+npm uninstall -g @saicmotor/cli
 
 # 2. 本地 link（模拟全局安装）
 npm link
