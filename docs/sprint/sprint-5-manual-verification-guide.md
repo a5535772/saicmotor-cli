@@ -34,7 +34,7 @@
 
 如果还没申请飞书应用，先按 [飞书 OIDC 申请手册](../../howto/FEISHU-OIDC-SETUP.md) 操作（全程约 30 分钟）。
 
-> **注意**：本指南安装的是 `sprint-5-sso` 分支（SSO 功能在此分支）。master 分支尚未合并 SSO，用 master 安装会缺少 exchange 能力。
+> **注意**：SSO 功能已合并至 master，本指南直接从 master 安装。
 
 ---
 
@@ -43,13 +43,19 @@
 如果你的机器上已经装过 saicmotor-cli，先全部卸干净。
 
 ```bash
-# 1. 卸载全局 CLI
-npm uninstall -g saicmotor-cli 2>/dev/null || true
+# 1. 卸载 npm 全局包（没装过会报 not installed，忽略即可）
+npm uninstall -g saicmotor-cli
 
-# 2. 清除本地数据（token、凭证、配置）
-rm -rf ~/.saicmotor
+# 2. 清除本地数据（config + 凭据缓存）
+Remove-Item -Recurse -Force $env:USERPROFILE\.saicmotor -ErrorAction SilentlyContinue
 
-# 3. 确认 saicmotor 命令已不可用
+# 3. 清除四个 AI skills
+npx -y skills rm saicmotor-suite -g
+npx -y skills rm saicmotor-leave -g
+npx -y skills rm saicmotor-attendance -g
+npx -y skills rm saicmotor-shared -g
+
+# 4. 确认 saicmotor 命令已不可用
 saicmotor --version
 # 预期：command not found
 ```
@@ -57,6 +63,43 @@ saicmotor --version
 > Windows PowerShell 用户：`rm -rf ~/.saicmotor` 改为 `Remove-Item -Recurse -Force $env:USERPROFILE\.saicmotor`。
 
 ---
+
+
+
+### 清理验证（人工逐项确认）
+
+```powershell
+# 命令应不存在
+saicmotor --version
+
+# skills 列表应无 saicmotor
+npx -y skills ls -g
+
+# 各目录应无 saicmotor 残留（无输出即干净）
+Get-ChildItem $env:USERPROFILE\.agents\skills | Where-Object Name -match saic
+Get-ChildItem $env:USERPROFILE\.claude\skills | Where-Object Name -match saic
+Get-ChildItem $env:USERPROFILE\.codebuddy\skills | Where-Object Name -match saic
+Test-Path $env:USERPROFILE\.saicmotor
+```
+
+> **通过判据**：
+>
+> - `saicmotor --version` 提示无法识别。
+>
+> - skills 列表与三个目录均无 saicmotor 条目；`Test-Path` 返回 `False`。
+>
+> - 若客户端目录留下指向中央仓的死链接，手工删除：
+>
+>   ```powershell
+>   Remove-Item $env:USERPROFILE\.claude\skills\saicmotor-* -Force
+>   Remove-Item $env:USERPROFILE\.codebuddy\skills\saicmotor-* -Force
+>   ```
+
+## 
+
+
+
+
 
 ## 阶段一：从 GitHub tarball 安装
 
@@ -66,7 +109,7 @@ saicmotor --version
 
 ```bash
 npm install -g --dangerously-allow-all-scripts \
-  https://github.com/a5535772/saicmotor-cli/tarball/sprint-5-sso
+  https://github.com/a5535772/saicmotor-cli/tarball/master
 ```
 
 > **npm 新版用户注意**：npm ≥ 10 默认阻止安装脚本，`--dangerously-allow-all-scripts` 是必需的——名字吓人，但只影响本次安装这一个包。

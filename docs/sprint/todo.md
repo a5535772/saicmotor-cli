@@ -8,16 +8,44 @@
 
 | # | 事项 | 类型 | 优先级 | 状态 |
 |---|------|------|:------:|:----:|
-| 1 | [卸载自动化：`npm uninstall -g` 时一键清理全部残留](#1-卸载自动化npm-uninstall--g-时一键清理全部残留) | 功能 | 🟡 中 | [ ] |
-| 2 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#2-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [ ] |
-| 3 | [全局安装时 postinstall 输出被 npm 吞掉](#3-bug-全局安装时-postinstall-输出被-npm-吞掉应显示出来) | Bug | 🟢 低 | [ ] |
-| 4 | [未登录时 AI 主动交互登录并续跑原任务](#4-优化未登录时-ai-主动发起交互式登录并续跑原任务) | 体验 | 🟢 低 | [ ] |
+| 1 | [包名迁移为 scoped 名 `@saicmotor/cli`，主推 `npx @saicmotor/cli@latest`](#1-基础架构包名迁移为-scoped-名-saicmotorcli主推-npx-saicmotorclilatest) | 基础架构 | 🔴 高 | [ ] |
+| 2 | [卸载自动化：`npm uninstall -g` 时一键清理全部残留](#2-卸载自动化npm-uninstall--g-时一键清理全部残留) | 功能 | 🟡 中 | [ ] |
+| 3 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#3-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [ ] |
+| 4 | [全局安装时 postinstall 输出被 npm 吞掉](#4-bug-全局安装时-postinstall-输出被-npm-吞掉应显示出来) | Bug | 🟢 低 | [ ] |
+| 5 | [未登录时 AI 主动交互登录并续跑原任务](#5-优化未登录时-ai-主动发起交互式登录并续跑原任务) | 体验 | 🟢 低 | [ ] |
+| 6 | [网关内置飞书 App Secret（硬编码）——生产前改为密钥注入](#6-安全债网关内置飞书-app-secret硬编码生产前必须改为密钥注入) | 安全/技术债 | 🟡 中 | [ ] |
 
 **已完成**：[跳转](#已完成)
 
 ---
 
-## [ ] 1. 卸载自动化：`npm uninstall -g` 时一键清理全部残留
+## [ ] 1. [基础架构] 包名迁移为 scoped 名 `@saicmotor/cli`，主推 `npx @saicmotor/cli@latest`
+
+**提出时间**：2026-09-23
+**优先级**：🔴 高（基础架构，宜在用户面扩大前先动；越晚改名，文档/脚本/白名单里的旧名引用越多）
+**现状**：主包 `package.json` 中 `name` 仍为无前缀的 `saicmotor-cli`（version 0.4.0，bin 名为 `saicmotor`）。
+**目标**：
+
+- 包名改为 `@saicmotor/cli`；用户侧主推 `npx @saicmotor/cli@latest`（即用即走、版本语义清晰、无全局陈旧问题），`npm i -g @saicmotor/cli` 继续支持、两种方式共存。
+- 为后续工具预留命名空间（如 `@saicmotor/sdk`）；版本/tag 语义化：正式版走 `latest`，内测用 `--tag beta` 发布、`npx @saicmotor/cli@beta`。
+
+**需求要点**：
+
+- [ ] `package.json` 改 `name: "@saicmotor/cli"`；评估是否同步升版本号（如借改名发 0.5.0/1.0.0）
+- [ ] 全仓搜索旧包名字符串引用并同步：文档（howto/INSTALL、人工验证手册、sprint 文档）、脚本、postinstall 中的自身检测、测试断言
+- [ ] 用户 `.npmrc` 配 scoped registry：`@saicmotor:registry=<公司内部 registry>`；未配时 npx 会走公共 npm 而 404——安装指引必须覆盖此条（与 [[npm-registry-publish-strategy]] 配套）
+- [ ] 发布校验：`npm publish` 后 `npm dist-tag ls @saicmotor/cli` 确认 `latest` 指向新版本；CI 发 beta 必须带 `--tag beta`，防止测试版抢占 latest
+- [ ] npx 缓存：文档明确写 `@latest`（带版本/tag 最可靠）；顽固缓存时 `npm cache clean`；postinstall 的 npx 场景检测继续生效（见 [[feishu-cli-npx-detection]] 同类教训）
+- [ ] npm v11 allow-scripts 白名单中若按包名配置，需同步改为 scoped 名
+- [ ] bin 名 `saicmotor` 保持不变（用户命令不变，仅安装来源变化）
+- [ ] 旧包名的处置策略：内部 registry 上旧名保留并在 README/版本说明指向新名，或弃置；二选一记录
+- [ ] 补/改测试 + 端到端验证：干净环境 `npx @saicmotor/cli@latest --version`、`npm i -g @saicmotor/cli` 两条路径均可用
+
+**验收标准**：未配置任何全局安装的机器上，仅凭 scoped registry 配置即可 `npx @saicmotor/cli@latest` 完成登录与一次业务调用；仓库内无残留旧包名引用（除历史文档/changelog 外）。
+
+---
+
+## [ ] 2. 卸载自动化：`npm uninstall -g` 时一键清理全部残留
 
 **提出时间**：2026-09-22（Sprint 4 人工验证后）
 **优先级**：🟡 中
@@ -50,10 +78,10 @@
 
 ---
 
-## [ ] 2. 安装/卸载知识零文档化：一个 HTTP 安装指引 + 一个 uninstall skill
+## [ ] 3. 安装/卸载知识零文档化：一个 HTTP 安装指引 + 一个 uninstall skill
 
 **提出时间**：2026-09-22
-**优先级**：🟡 中（与事项 1 可合并设计：卸载环节即由 uninstall skill 承担）
+**优先级**：🟡 中（与事项 2 可合并设计：卸载环节即由 uninstall skill 承担）
 **背景**：目前让 AI 完成安装/卸载，需要用户指定本地文档（"读 howto/INSTALL.md"），依赖 AI 能访问仓库文件、会话恰好在项目目录。目标形态是用户**不指定任何文档**：
 
 **目标交互**
@@ -80,7 +108,7 @@
 
 ---
 
-## [ ] 3. [BUG] 全局安装时 postinstall 输出被 npm 吞掉，应显示出来
+## [ ] 4. [BUG] 全局安装时 postinstall 输出被 npm 吞掉，应显示出来
 
 **提出时间**：2026-09-22
 **优先级**：🟢 低
@@ -100,7 +128,7 @@
 
 ---
 
-## [ ] 4. 优化：未登录时 AI 主动发起交互式登录并续跑原任务
+## [ ] 5. 优化：未登录时 AI 主动发起交互式登录并续跑原任务
 
 **提出时间**：2026-09-22
 **优先级**：🟢 低
@@ -120,6 +148,23 @@
 - [ ] 安全注意：skill 中须提示避免让用户以明文在对话中发送密码，优先推荐 `!` 本地执行；凭据不落对话历史
 
 **验收标准**：未登录态对 AI 说"帮我查年假余额"，它在一轮对话内完成询问/登录/续跑并返回余额，用户不重复需求。
+
+---
+
+## [ ] 6. [安全债] 网关内置飞书 App Secret（硬编码），生产前必须改为密钥注入
+
+**提出时间**：2026-09-23
+**优先级**：🟡 中（POC 阶段刻意接受；对外发布 / 扩大使用范围前必须处理）
+**现状**：为支持免配置一键端到端验证，`saicmotor-cli-mock-gateway/src/main/resources/application.yml` 中将飞书 App ID/App Secret 写进了 `${FEISHU_APP_ID:...}` / `${FEISHU_APP_SECRET:...}` 的默认值。Secret 进入 git 历史后即视为已泄露。
+**优化方向（实施时评审）**：
+
+- [ ] 配置文件恢复为无默认值（`${FEISHU_APP_ID:}`），通过环境变量、本地未入库的 `application-local.yml` 或密钥管理服务注入
+- [ ] 评估是否需要在飞书后台重置（rotate）该 App Secret——凡推送到远端的 secret 都应视为可能泄露，重置是最稳妥做法
+- [ ] 文档（FEISHU-OIDC-SETUP.md）保留环境变量注入指引；本地开发者提供不入库的配置模板
+- [ ] 检查 git 历史清理的必要性（一般不推荐改写历史；rotate secret 成本更低）
+- [ ] 启动摘要日志继续只打印 App ID，不得打印 Secret（现状已满足）
+
+**验收标准**：仓库任何文件与 git 历史的新增提交中不再出现明文 App Secret；干净环境按文档通过环境变量注入即可完成 SSO 登录。
 
 ---
 
