@@ -1,18 +1,21 @@
 {
-  "name": "saicmotor-cli",
+  "name": "@saicmotor/cli",
   "version": "0.4.0",
   "description": "面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行",
   "type": "commonjs",
   "bin": { "saicmotor": "scripts/run.js" },
   "files": [
-    "dist/",
-    "skills/",
-    "catalog/",
-    "scripts/",
+    "dist/src/**/*.js",
+    "dist/src/**/*.json",
+    "skills/**/*.md",
+    "catalog/**/*.json",
+    "scripts/run.js",
+    "scripts/postinstall.js",
+    "scripts/attendance",
+    "scripts/leave",
     "saicmotor.config.json"
   ],
   "scripts": {
-    "prepare": "node -e \"if(!require('fs').existsSync('dist/src/cli/index.js'))console.warn('⚠ dist/ 缺失，请运行 npm run build')\"",
     "prepublishOnly": "npm run build && npm test",
     "postinstall": "node scripts/postinstall.js || true",
     "build": "tsc -p tsconfig.json",
