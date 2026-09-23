@@ -1,4 +1,4 @@
-# saicmotor-cli 安装指南
+# @saicmotor/cli 安装指南
 
 > 面向终端用户（人类 & AI Agent）——安装、卸载、更新。
 
@@ -23,7 +23,13 @@ saicmotor attendance records query     # 查打卡记录
 ## 环境要求
 
 - Node.js（`npm` 可用）——版本 ≥ 16
-- 网络能访问 GitHub（安装过程中会自动下载 AI skills）
+- 网络能访问内部 npm registry（安装过程中会自动下载 AI skills）
+
+---
+
+## Registry 说明
+
+> **推荐使用 `--registry` flag 指定内部 registry**，而非全局配置 `.npmrc`。`--registry` 是显式的、一次性的，不会影响本机其他 npm 包的安装行为。
 
 ---
 
@@ -31,15 +37,15 @@ saicmotor attendance records query     # 查打卡记录
 
 以下两种方式**任选其一**：
 
-### 方式一 — 从 GitHub 安装（推荐）
+### 方式一 — 从内部 Registry 安装（推荐）
 
 ```bash
-npm install -g --dangerously-allow-all-scripts https://github.com/a5535772/saicmotor-cli/tarball/master
+npm install -g @saicmotor/cli --registry=http://localhost:4873
 ```
 
 一行搞定。装完后 `saicmotor` 命令全局可用，AI skills 也会自动注册到你电脑上已安装的 AI 工具里。
 
-> **npm 新版用户注意**：npm ≥ 10 默认阻止安装脚本，`--dangerously-allow-all-scripts` 是必需的——名字吓人，但只影响本次安装这一个包，不会有风险。
+> **npm 新版用户注意**：npm ≥ 11 的 `allow-scripts` 白名单对 `-g` 全局安装无效，postinstall 可能被阻止。如果 skills 未自动注册，手动执行 `saicmotor install` 即可。
 
 ### 方式二 — 从源码安装
 
@@ -51,7 +57,7 @@ npm link            # 全局注册 saicmotor 命令
 npm run build       # TypeScript → JavaScript
 
 # 手动注册 AI skills（如未自动注册）
-npx skills add a5535772/saicmotor-cli --all -g
+npx skills add @saicmotor/cli --all -g
 ```
 
 > **给 AI Agent：** 如果你在帮用户安装，用方式一。方式二只有需要改源码的开发场景才用。
@@ -112,10 +118,10 @@ saicmotor --help          # 列出所有可用命令
 **第 1 步 — 安装**
 
 ```bash
-npm install -g --dangerously-allow-all-scripts https://github.com/a5535772/saicmotor-cli/tarball/master
+npm install -g @saicmotor/cli --registry=http://localhost:4873
 ```
 
-> 安装过程中会自动运行 `npx skills add a5535772/saicmotor-cli --all -g`，把 AI skills 注册到用户电脑上的 Claude Code、Trae 等 AI 工具。如果当前机器还没装 AI 工具，skills 注册会静默跳过（不影响 CLI 正常使用）。
+> 安装过程中会自动运行 `npx skills add @saicmotor/cli --all -g`，把 AI skills 注册到用户电脑上的 Claude Code、Trae 等 AI 工具。如果当前机器还没装 AI 工具，skills 注册会静默跳过（不影响 CLI 正常使用）。npm v11 的 allow-scripts 白名单对 `-g` 无效，若 postinstall 被阻止，手动执行 `saicmotor install`。
 
 **第 2 步 — 验证安装**
 
@@ -159,7 +165,8 @@ saicmotor leave balance query --format table
 ### 1. 卸载 CLI
 
 ```bash
-npm uninstall -g saicmotor-cli
+saicmotor uninstall   # 清理 skills 与本地数据（S9）
+npm uninstall -g @saicmotor/cli
 ```
 
 ### 2. 清除本地数据
@@ -205,7 +212,7 @@ ls ~/.codebuddy/skills | grep -i saicmotor   # 应无输出
 ### 更新到最新版
 
 ```bash
-npm update -g saicmotor-cli
+npm update -g @saicmotor/cli
 ```
 
 AI skills 通常在安装/更新后自动刷新。如果没刷新，手动跑：
@@ -228,8 +235,8 @@ saicmotor --version
 
 ```json
 {
-  "repo": "公司/saicmotor-cli",
-  "installUrl": "内部安装地址",
+  "repo": "@saicmotor/cli",
+  "installUrl": "npm install -g @saicmotor/cli --registry=http://localhost:4873",
   "repository": "内部仓库地址"
 }
 ```
@@ -269,10 +276,10 @@ cat ~/.saicmotor/config.json      # Mac / Linux
 
 ### Q: `npm install -g` 很慢或失败？
 
-换个镜像源试试：
+确认使用了正确的 registry：
 
 ```bash
-npm install -g --dangerously-allow-all-scripts https://github.com/a5535772/saicmotor-cli/tarball/master --registry=https://registry.npmmirror.com
+npm install -g @saicmotor/cli --registry=http://localhost:4873
 ```
 
 ### Q: 401 错误（未授权）？

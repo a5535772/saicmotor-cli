@@ -1,15 +1,15 @@
-# saicmotor-cli
+# @saicmotor/cli
 
-> **saicmotor-cli** — 面向 AI Agent 的企业 CLI 工具平台：用 skill 编排任务，用 catalog 声明接口，用引擎自动执行。
+> **@saicmotor/cli** — 面向 AI Agent 的企业 CLI 工具平台：用 skill 编排任务，用 catalog 声明接口，用引擎自动执行。
 
 [![Status](https://img.shields.io/badge/status-POC-蓝色)](#现状)
-[![Tests](https://img.shields.io/badge/tests-46/46%20passed-绿色)](saicmotor-cli)
+[![Tests](https://img.shields.io/badge/tests-46/46%20passed-绿色)](@saicmotor/cli)
 
 ---
 
 ## 一句话
 
-`saicmotor-cli` 是一个 **面向 AI Agent 的 CLI 平台**。
+`@saicmotor/cli` 是一个 **面向 AI Agent 的 CLI 平台**。
 
 - **对 AI Agent**：读 `skills/SKILL.md` 知道什么时候调什么命令、按什么顺序编排
 - **对 CLI 引擎**：读 `catalog/services/*.json` 动态生成命令，不改引擎只改 JSON
@@ -147,10 +147,16 @@ saicmotor attendance corrections submit --date 2026-09-21 --reason 忘记打卡 
 ### 前提
 
 - Node ≥ 20
-- 本地开发：clone 本仓库即可，未发布 npm
+- 本地开发：克隆本仓库，`npm install` 后 `npm link` 注册全局命令
 - 测试假后端：需 Java 17 + Maven（仅运行 mock-* 时需要）
 
 ### 安装
+
+```bash
+npm install -g @saicmotor/cli --registry=http://localhost:4873
+```
+
+本地开发（源码）：
 
 ```bash
 cd saicmotor-cli
@@ -200,7 +206,7 @@ mvn spring-boot:run
 
 ```
 .
-├── saicmotor-cli/              ← 🎯 npm 包
+├── saicmotor-cli/              ← 🎯 npm 包（@saicmotor/cli）
 │   ├── src/cli/                  命令面：index.ts 动态注册命令
 │   ├── src/engine/               通用引擎：catalog / run / http / output
 │   ├── src/auth/                 认证：store / login / session / transport
