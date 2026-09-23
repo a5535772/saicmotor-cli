@@ -6,13 +6,11 @@
   "bin": { "saicmotor": "scripts/run.js" },
   "files": [
     "dist/src/**/*.js",
-    "dist/src/**/*.json",
+    "dist/scripts/**/*.js",
     "skills/**/*.md",
     "catalog/**/*.json",
     "scripts/run.js",
     "scripts/postinstall.js",
-    "scripts/attendance",
-    "scripts/leave",
     "saicmotor.config.json"
   ],
   "scripts": {
