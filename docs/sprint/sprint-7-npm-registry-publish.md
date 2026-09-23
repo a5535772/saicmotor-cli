@@ -1,127 +1,102 @@
-# Sprint 7: npm Registry 发布 + 安装健壮性加固
+# Sprint 7: npm Registry 发布 + Scoped 改名 + npx 主推
 
-> 状态：⬜ 待排期 | 创建于 2026-09-21
+> 状态：⚪ 待排期 | 创建于 2026-09-21，修订于 2026-09-23
+>
+> 本 sprint 是 scoped 分发 + 插件生态统一架构（见 [端到端架构设计](2026-09-23-scoped-distribution-plugin-architecture.md)）的**分发地基**。
+> 内部结构不动——核心仍是单体包，本次只解决"怎么发、怎么装、叫什么名"。
+> 详细技术决议以架构文档 §4「S7」为准，本文件只陈述需求与验收。
 
 ## 背景
 
 ### 现状问题
 
-当前 saicmotor-cli 通过 `github:a5535772/saicmotor-cli` 安装，存在两个已知问题：
+当前 `saicmotor-cli` 通过 `github:a5535772/saicmotor-cli` 安装，存在三个已知问题：
 
-1. **npm v11 allow-scripts 门槛**：npm v11 默认阻止 lifecycle 钩子（prepare、postinstall），用户需要额外配置或加 `--foreground-scripts` 才能执行。
+1. **npm v11 allow-scripts 门槛**：npm v11 默认阻止 lifecycle 钩子（prepare、postinstall），用户需额外配置或加 `--foreground-scripts` 才能执行。
+2. **npm v11 `github:` 文件提取缺陷**：即使让钩子执行，npm v11 对 `github:` specifier 的 `files` 目录通配处理有问题，`scripts/postinstall.js` 在安装目录中找不到。
+3. **公司环境约束**：内部用户大多不会安装 git，无法通过 `github:` 或 git 协议安装；只能走 `npm install`。
 
-2. **npm v11 `github:` 文件提取缺陷**：即使加了 `--foreground-scripts` 让钩子执行，npm v11 对 `github:` specifier 的 `files` 目录通配处理有问题——`scripts/postinstall.js` 在安装目录中找不到。
+### 改名的动机（并入本 sprint）
 
-3. **公司环境约束**：内部用户大多不会安装 git，无法通过 `github:` 或 git 协议安装。公司 GitLab 仓库功能不全，用户只能走 `npm install`。
-
-### 飞书 CLI 对比分析
-
-已完整分析 `@larksuite/cli` 的架构（见关联文档），结论：
-
-- **借鉴设计理念**，不照搬架构
-- 飞书是"npm 壳 + 外挂 Go 二进制下载"，saicmotor-cli 不需要——纯 TS 项目无需 Go 二进制
-- 飞书的架构为其跨平台原生二进制分发服务，不是为绕 npm 问题设计的
+- 现状包名为无前缀的 `saicmotor-cli`（v0.4.0，bin 名 `saicmotor`）。
+- scoped 改名（`@saicmotor/cli`）确立的是整个 `@saicmotor/*` 命名空间，未来插件（`@saicmotor/plugin-*`）与 SDK（`@saicmotor/sdk`）都在此 scope 下。外部用户为零时改名成本最低，越晚改，文档/脚本/白名单里的旧名引用越多。
 
 ## 目标
 
-1. saicmotor-cli 可以通过公司内部 npm registry 安装（`npm install -g saicmotor-cli`）
-2. 安装过程不依赖 git、GitHub 或任何外网资源
-3. 即使 postinstall 未执行（allow-scripts 被阻止），CLI 也能给出清晰指引或自动修复
+1. `@saicmotor/cli` 可通过内部 npm registry 安装（POC 阶段：本地 Docker 运行 Verdaccio）。
+2. 安装过程不依赖 git、GitHub 或任何外网资源。
+3. **主推 `npx @saicmotor/cli@latest`**（即用即走、版本语义清晰、无全局陈旧），`npm i -g @saicmotor/cli` 继续支持、两者共存。
+4. 即使 postinstall 未执行（allow-scripts 被阻止），CLI 也能给出清晰指引或自动修复。
+5. 仓库内无残留旧包名引用（历史文档/changelog 除外）。
+
+## 关键决策（详见架构文档 §4「S7」）
+
+- **registry 端点可替换**：地址只出现在 `.npmrc`（`@saicmotor:registry=<端点>`），代码/脚本不硬编码，POC 的 Verdaccio 验证完换正式内网服务器零代码改动。
+- **bin 名不变**：改为 scoped 包后，用户命令仍是 `saicmotor`，仅安装来源变化。
+- **dist-tag 规范**：正式版走 `latest`，内测用 `--tag beta` 发布、`npx @saicmotor/cli@beta`。
 
 ## 任务拆解
 
-### 任务 1: 确认/搭建公司内部 npm registry
+### 任务 1: 搭建/对接内部 npm registry（POC）
 
-- [ ] 确认公司是否已有 Verdaccio / Artifactory / 其他 npm 私服
-- [ ] 如有，获取 publish 权限和地址
-- [ ] 如无，评估搭建方案（Verdaccio 轻量）
-- [ ] 配置 `.npmrc` 指向内部 registry
+- [ ] 本地 Docker 运行 Verdaccio
+- [ ] 配置 `.npmrc` 指向内部 registry（scoped：`@saicmotor:registry=<端点>`）
+- [ ] 确认 publish / install 权限与地址
 
-### 任务 2: `files` 字段显式化
+### 任务 2: Scoped 改名
 
-当前：
-```json
-"files": ["dist/", "skills/", "catalog/", "scripts/"]
-```
+- [ ] `package.json` 改 `name: "@saicmotor/cli"`；评估是否借改名升版本号（当前 0.4.0 → 0.5.0 或 1.0.0）
+- [ ] 全仓搜索旧包名字符串引用并同步：文档（howto/INSTALL、人工验证手册、sprint 文档）、脚本、postinstall 中的自身检测、测试断言
+- [ ] 旧包名的处置策略二选一并记录（内部 registry 旧名保留并在 README 指向新名 / 弃置）
+- [ ] npm v11 allow-scripts 白名单若按包名配置，同步改为 scoped 名
 
-改为显式列出（精确 glob 或逐文件）：
-```json
-"files": [
-  "dist/**/*.js",
-  "dist/**/*.json",
-  "skills/**/*.md",
-  "catalog/**/*.json",
-  "scripts/run.js",
-  "scripts/postinstall.js",
-  "saicmotor.config.json"
-]
-```
+### 任务 3: `files` 字段显式化
 
-- [ ] 修改 `package.json` 的 `files` 字段
+- [ ] 将目录通配改为显式列出（精确 glob 或逐文件）
 - [ ] `npm pack --dry-run` 验证打包内容
-- [ ] 确保 `src/` 不被打包（源码不应进发布包）
+- [ ] 确保 `src/` 不被打包（源码不进发布包）
 
-### 任务 3: `run.js` 优雅降级
+### 任务 4: `run.js` 优雅降级
 
-当前：
-```javascript
-if (!fs.existsSync(entry)) {
-  console.error("入口缺失，请重装");
-  process.exit(1);
-}
-```
+- [ ] dist/ 缺失时先尝试自动 `npm run build`（开发环境有 `src/` + `tsc` 时）
+- [ ] 非开发环境给清晰修复指引 + 内部 registry 安装命令
 
-改进方案（可选，取决于是否在发布包里带 `src/` 和 `tsc`）：
-- [ ] dist/ 缺失时检测是否在开发环境（有 `src/` 和 `tsc`）
-- [ ] 如在开发环境：自动 `npm run build` 后重试
-- [ ] 如不在开发环境：给出清晰的修复指引 + registry 安装命令
-- [ ] 错误信息包含公司内部 registry 地址
+### 任务 5: `postinstall` npx 检测
 
-### 任务 4: postinstall npx 检测
+- [ ] postinstall 开头加 `npm_command === "exec"` 检测，npx 场景跳过重量操作
+- [ ] 验证 `npm i -g` 触发 postinstall、`npx @saicmotor/cli` 跳过
 
-```javascript
-// 在 scripts/postinstall.js 开头加
-const isNpxPostinstall = process.env.npm_command === "exec";
-if (isNpxPostinstall) {
-  console.log("npx 模式，跳过 skills 自动注册");
-  process.exit(0);
-}
-```
+### 任务 6: 去掉 `prepare` 钩子
 
-- [ ] 在 `scripts/postinstall.js` 开头加 npx 检测
-- [ ] 验证 `npm install -g` 正常触发 postinstall
-- [ ] 验证 `npx saicmotor-cli` 跳过 postinstall 重量操作
+- [ ] 评估是否保留开发期用法；发布前由 `prepublishOnly` 保证 dist/ 已构建
 
-### 任务 5: 去掉 prepare 钩子
+### 任务 7: HTTP 安装指引（todo#3 之"装"）
 
-当前 `prepare` 钩子在 `npm install` 时每次都跑，在内部 registry 场景下不需要——发布前由 `prepublishOnly` 保证 dist/ 已构建。
+- [ ] 承载地址与 registry 形态一致（内部可访问），内容为一条 npm 命令 + scoped registry 配置 + 安装后验证，AI WebFetch 即可执行
 
-- [ ] 评估是否保留 `prepare`（开发时有用）
-- [ ] 如去掉，确保 `prepublishOnly` 覆盖构建检查
+### 任务 8: 发布到内部 registry + 端到端验证
 
-### 任务 6: 发布到内部 registry
+- [ ] `npm publish --registry=<内部地址>`；`npm dist-tag ls @saicmotor/cli` 确认 `latest` 指向新版本
+- [ ] 干净环境验证 `npx @saicmotor/cli@latest --version` 与 `npm i -g @saicmotor/cli` 两条路径均可用
+- [ ] 验证 `saicmotor --version`、`saicmotor install` 正常
 
-- [ ] `npm publish --registry=<内部地址>`
-- [ ] 验证 `npm install -g saicmotor-cli --registry=<内部地址>` 成功
-- [ ] 验证 postinstall 正常执行
-- [ ] 验证 `saicmotor --version` 正常
-- [ ] 验证 `saicmotor install` 正常注册 skills
+## 验收标准
 
-### 任务 7: 安装验证文档
-
-- [ ] 编写面向内部用户的安装指南
-- [ ] 包含：registry 配置、安装命令、常见问题排障
+1. 未配置任何全局安装的机器上，仅凭 scoped registry 配置即可 `npx @saicmotor/cli@latest` 完成登录与一次业务调用。
+2. `npm i -g @saicmotor/cli` 与 `npx @saicmotor/cli@latest` 两条路径在干净环境均通过端到端验证。
+3. 仓库内无残留旧包名引用（历史文档/changelog 除外）。
 
 ## 关联文档
 
-- [npm registry 发布策略（memory）](../../../.claude/projects/D--work-things-saicmotor-cli-all/memory/npm-registry-publish-strategy.md)
-- [飞书 CLI run.js 优雅降级](../../../.claude/projects/D--work-things-saicmotor-cli-all/memory/feishu-cli-runjs-graceful-degradation.md)
-- [飞书 CLI 显式 files 字段](../../../.claude/projects/D--work-things-saicmotor-cli-all/memory/feishu-cli-explicit-files.md)
-- [飞书 CLI npx 检测](../../../.claude/projects/D--work-things-saicmotor-cli-all/memory/feishu-cli-npx-detection.md)
-- [踩坑记录：prepare hook + postinstall 安装失败](../../docs/lessons-learned-the-hard-way/2026-09-21-prepare-hook-orphan-shim-install-failure.md)
+- [端到端架构设计（S7/S8/S9）](2026-09-23-scoped-distribution-plugin-architecture.md)
+- [Sprint 8: Skill 插件化生态](sprint-8-skill-plugin-ecosystem.md)
+- [Sprint 9: 默认能力收敛](sprint-9-default-capability-convergence.md)
+- [TODO 清单](todo.md)
+- 经验依赖（memory）：npm-registry-publish-strategy、npm-v11-global-install-quirks、feishu-cli-npx-detection、feishu-cli-runjs-graceful-degradation、feishu-cli-explicit-files
 
 ## 不做的
 
 - ❌ 不照搬飞书 CLI 的"npm 壳 + 外挂二进制"模式——saicmotor-cli 纯 TS 项目不需要
 - ❌ 不引入 Go/Rust 工具链——保持 TypeScript 单一技术栈
 - ❌ 不依赖 GitHub Releases 作为二进制托管——用户可能无法访问外网
+- ❌ 不动内部结构（插件化、loader 等属于 S8）——本 sprint 只改分发，不堵死插件的路
