@@ -1,8 +1,6 @@
-import { execSync as nodeExecSync } from "node:child_process";
-export declare const SKILLS_REPO: string;
-/** 测试注入点：替换 execSync 实现 */
-export declare function __setExecSync(fn: typeof nodeExecSync): void;
+/** 检查任意客户端是否已有本包的 skill 条目 */
 export declare function skillsAlreadyInstalled(): boolean;
+/** 注册核心包内置的全部 skills */
 export declare function installSkills({ force }?: {
     force?: boolean;
 }): void;

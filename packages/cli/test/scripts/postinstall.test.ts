@@ -1,139 +1,132 @@
 // saicmotor-cli/test/scripts/postinstall.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  installSkills,
-  runPostinstall,
-  __setExecSync,
-} from "../../src/install/skills";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { installSkills, skillsAlreadyInstalled, runPostinstall } from "../../src/install/skills";
+import { AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
 
-describe("installSkills", () => {
+const origDirs: Record<string, string> = { ...AI_CLIENT_SKILL_DIRS };
+
+describe("installSkills (filesystem-based registrar)", () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
-  let execSyncMock: ReturnType<typeof vi.fn>;
+  let tmpClient: string;
 
   beforeEach(() => {
+    // Restore to original before each test to ensure clean state
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
+    // Clear any leftover keys from previous tests
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      if (!(k in origDirs)) delete AI_CLIENT_SKILL_DIRS[k];
+    }
+
+    tmpClient = path.join(os.tmpdir(), `saicmotor-postinstall-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+    // Redirect AI_CLIENT_SKILL_DIRS to temp in place
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      AI_CLIENT_SKILL_DIRS[k] = path.join(tmpClient, k, "skills");
+    }
+
     consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    execSyncMock = vi.fn();
-    __setExecSync(execSyncMock);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    // Restore original dirs
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
+    // Clean up temp dirs
+    if (fs.existsSync(tmpClient)) fs.rmSync(tmpClient, { recursive: true, force: true });
   });
 
   it("installs skills when not already installed", () => {
-    // skillsAlreadyInstalled: skills ls fails → not installed
-    execSyncMock
-      .mockImplementationOnce(() => {
-        throw new Error("command failed"); // skills ls fails
-      })
-      .mockReturnValueOnce(Buffer.from("")); // skills add succeeds
-
     installSkills();
 
-    expect(execSyncMock).toHaveBeenNthCalledWith(
-      1,
-      "npx -y skills ls -g",
-      { stdio: "pipe", timeout: 30000 }
-    );
-    expect(execSyncMock).toHaveBeenNthCalledWith(
-      2,
-      "npx -y skills add a5535772/saicmotor-cli --all -g",
-      { stdio: "pipe", timeout: 120000 }
-    );
-    expect(consoleLogSpy).toHaveBeenCalledWith("✓ AI skills 已注册");
+    // At least one skill should be registered in at least one client dir
+    const anySkillInstalled = Object.values(AI_CLIENT_SKILL_DIRS).some((dir) => {
+      return (
+        fs.existsSync(path.join(dir as string, "saicmotor-suite"))
+        || fs.existsSync(path.join(dir as string, "saicmotor-leave"))
+        || fs.existsSync(path.join(dir as string, "saicmotor-attendance"))
+        || fs.existsSync(path.join(dir as string, "saicmotor-shared"))
+      );
+    });
+    expect(anySkillInstalled).toBe(true);
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("个 AI skills 已注册"));
   });
 
   it("skips when already installed", () => {
-    execSyncMock.mockReturnValueOnce(
-      Buffer.from("saicmotor-suite\nsaicmotor-leave\n")
-    );
+    // Pre-create a skill entry to simulate "already installed"
+    const skillName = "saicmotor-suite";
+    for (const clientSkillsDir of Object.values(AI_CLIENT_SKILL_DIRS)) {
+      const target = path.join(clientSkillsDir as string, skillName);
+      fs.mkdirSync(target, { recursive: true });
+      fs.writeFileSync(path.join(target, "SKILL.md"), "# test\n");
+    }
 
+    expect(skillsAlreadyInstalled()).toBe(true);
     installSkills();
-
     expect(consoleLogSpy).toHaveBeenCalledWith("AI skills 已安装，跳过");
-    // 只调用了 skills ls，没有调用 skills add
-    expect(execSyncMock).toHaveBeenCalledTimes(1);
-    expect(execSyncMock).toHaveBeenCalledWith(
-      "npx -y skills ls -g",
-      { stdio: "pipe", timeout: 30000 }
-    );
-  });
-
-  it("detects installed skills despite ANSI color codes", () => {
-    // skills CLI 即便 stdio=pipe 也输出颜色码，行首带转义序列
-    execSyncMock.mockReturnValueOnce(
-      Buffer.from("\x1b[36msaicmotor-suite\x1b[0m\n\x1b[36msaicmotor-leave\x1b[0m\n")
-    );
-
-    installSkills();
-
-    expect(consoleLogSpy).toHaveBeenCalledWith("AI skills 已安装，跳过");
-    expect(execSyncMock).toHaveBeenCalledTimes(1);
   });
 
   it("force reinstalls even if already installed", () => {
-    execSyncMock
-      .mockReturnValueOnce(Buffer.from("saicmotor-suite\n")); // skills ls
+    const skillName = "saicmotor-suite";
+    for (const clientSkillsDir of Object.values(AI_CLIENT_SKILL_DIRS)) {
+      const target = path.join(clientSkillsDir as string, skillName);
+      fs.mkdirSync(target, { recursive: true });
+      fs.writeFileSync(path.join(target, "SKILL.md"), "# test\n");
+    }
 
+    expect(skillsAlreadyInstalled()).toBe(true);
     installSkills({ force: true });
 
-    // force=true 跳过 skillsAlreadyInstalled 检查，直接 add
-    expect(execSyncMock).toHaveBeenNthCalledWith(
-      1,
-      "npx -y skills add a5535772/saicmotor-cli --all -g",
-      { stdio: "pipe", timeout: 120000 }
-    );
-    expect(consoleLogSpy).toHaveBeenCalledWith("✓ AI skills 已注册");
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("个 AI skills 已注册"));
   });
 
-  it("handles install failure gracefully", () => {
-    execSyncMock
-      .mockImplementationOnce(() => {
-        throw new Error("command failed"); // skills ls fails
-      })
-      .mockImplementationOnce(() => {
-        throw new Error("network error"); // skills add fails
-      });
-
-    installSkills();
-
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      "⚠ AI skills 注册失败，稍后可手动运行:\n" +
-        "  saicmotor install\n" +
-        "  或: npx skills add a5535772/saicmotor-cli --all -g"
-    );
+  it("skillsAlreadyInstalled returns false when nothing registered", () => {
+    expect(skillsAlreadyInstalled()).toBe(false);
   });
 
-  it("respects SAICMOTOR_SKILLS_REPO env var for custom repo", async () => {
-    vi.stubEnv("SAICMOTOR_SKILLS_REPO", "my-org/private-repo");
-    execSyncMock
-      .mockImplementationOnce(() => {
-        throw new Error("command failed"); // ls fails → not installed
-      })
-      .mockReturnValueOnce(Buffer.from(""));
+  it("skillsAlreadyInstalled returns true when at least one skill exists in any client dir", () => {
+    const firstDir = Object.values(AI_CLIENT_SKILL_DIRS)[0] as string;
+    const target = path.join(firstDir, "saicmotor-suite");
+    fs.mkdirSync(target, { recursive: true });
+    fs.writeFileSync(path.join(target, "SKILL.md"), "# test\n");
 
-    // 重新加载模块以读取新 env（SKILLS_REPO 在模块求值时确定）
-    vi.resetModules();
-    const fresh = await import("../../src/install/skills");
-    fresh.__setExecSync(execSyncMock);
-    fresh.installSkills();
-
-    expect(execSyncMock).toHaveBeenCalledWith(
-      "npx -y skills add my-org/private-repo --all -g",
-      { stdio: "pipe", timeout: 120000 }
-    );
+    expect(skillsAlreadyInstalled()).toBe(true);
   });
 
   it("runPostinstall skips skill registration under npx", () => {
     vi.stubEnv("npm_command", "exec");
-    execSyncMock.mockImplementation(() => {
-      throw new Error("should not be called");
-    });
 
     runPostinstall();
 
     expect(consoleLogSpy).toHaveBeenCalledWith("npx 模式，跳过 skills 自动注册");
-    expect(execSyncMock).not.toHaveBeenCalled();
+    const allClean = Object.values(AI_CLIENT_SKILL_DIRS).every((dir) => {
+      const dirStr = dir as string;
+      return (
+        !fs.existsSync(path.join(dirStr, "saicmotor-suite"))
+        && !fs.existsSync(path.join(dirStr, "saicmotor-leave"))
+        && !fs.existsSync(path.join(dirStr, "saicmotor-attendance"))
+        && !fs.existsSync(path.join(dirStr, "saicmotor-shared"))
+      );
+    });
+    expect(allClean).toBe(true);
+
+    vi.unstubAllEnvs();
+  });
+
+  it("runPostinstall runs registration when not npx", () => {
+    vi.stubEnv("npm_command", "install");
+
+    runPostinstall();
+
+    const hasCompletionMsg = consoleLogSpy.mock.calls.some(
+      (call) =>
+        typeof call[0] === "string"
+        && call[0].includes("saicmotor CLI 安装完成")
+    );
+    expect(hasCompletionMsg).toBe(true);
+
     vi.unstubAllEnvs();
   });
 });

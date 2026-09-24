@@ -1,5 +1,4 @@
 {
-  "repo": "a5535772/saicmotor-cli",
   "installUrl": "@saicmotor/cli",
   "defaults": {
     "gateway": "http://localhost:8081"
