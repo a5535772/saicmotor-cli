@@ -1,0 +1,35 @@
+{
+  "name": "@saicmotor/cli",
+  "version": "0.4.0",
+  "description": "面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行",
+  "type": "commonjs",
+  "bin": { "saicmotor": "scripts/run.js" },
+  "files": [
+    "dist/src/**/*.js",
+    "dist/scripts/**/*.js",
+    "skills/**/*.md",
+    "catalog/**/*.json",
+    "scripts/run.js",
+    "scripts/postinstall.js",
+    "saicmotor.config.json"
+  ],
+  "scripts": {
+    "prepublishOnly": "npm run build && npm test",
+    "postinstall": "node scripts/postinstall.js || true",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "tsx src/cli/index.ts"
+  },
+  "engines": { "node": ">=16" },
+  "dependencies": {
+    "@saicmotor/sdk": "*",
+    "commander": "^12.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

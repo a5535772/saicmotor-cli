@@ -1,0 +1,22 @@
+{
+  "name": "@saicmotor/sdk",
+  "version": "0.1.0",
+  "description": "saicmotor 插件开发 SDK：类型、schema、测试 helper",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist/**/*.js", "dist/**/*.d.ts"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

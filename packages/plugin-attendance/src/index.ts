@@ -1,0 +1,1 @@
+// @saicmotor/plugin-attendance — placeholder

@@ -1,0 +1,7 @@
+{
+  "name": "@saicmotor/plugin-user",
+  "engine": "^1.0.0",
+  "catalog": ["catalog/services/*.json"],
+  "skills": ["skills/saicmotor-user"],
+  "scripts": "scripts"
+}
