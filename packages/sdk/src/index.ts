@@ -1,2 +1,5 @@
-// @saicmotor/sdk — placeholder for future SDK types
-export const SDK_VERSION = "0.1.0";
+export { PluginManifestSchema, validateManifest, definePlugin } from "./manifest";
+export type { PluginManifest } from "./manifest";
+export type { ScriptContext, ScriptFn, RunResult } from "./context";
+export type { Config, AuthConfig } from "./config-types";
+export type { Field, Method, Resource, Service } from "./catalog-types";
