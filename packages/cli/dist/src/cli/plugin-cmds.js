@@ -54,7 +54,7 @@ function registerPluginCommands(program) {
         .command("install <pkg>")
         .description("安装插件（短名自动展开为 @saicmotor/plugin-<name>）")
         .option("--json", "JSON 输出")
-        .action(async (pkg, opts) => {
+        .action((pkg, opts) => {
         try {
             const name = fullName(pkg);
             const dir = (0, paths_1.installedPluginsDir)();

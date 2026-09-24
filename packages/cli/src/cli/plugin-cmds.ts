@@ -2,8 +2,8 @@ import { Command } from "commander";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { loadState, saveState, type PluginStateEntry } from "../plugin/state";
-import { installedPluginsDir, linkedPluginsDir } from "../plugin/paths";
+import { loadState, saveState } from "../plugin/state";
+import { installedPluginsDir } from "../plugin/paths";
 import { loadPlugins } from "../plugin/loader";
 import { loadConfig } from "../config";
 import {
@@ -13,12 +13,6 @@ import {
 } from "../plugin/registrar";
 import { buildSuiteRoutes, generateSuiteSkill } from "../plugin/suite";
 import { findPackageRoot } from "../pkg-root";
-
-interface JsonOutput {
-  ok: boolean;
-  data?: unknown;
-  error?: string;
-}
 
 function jsonOut(data: unknown): void {
   console.log(JSON.stringify({ ok: true, data }, null, 2));
@@ -61,7 +55,7 @@ export function registerPluginCommands(program: Command): void {
     .command("install <pkg>")
     .description("安装插件（短名自动展开为 @saicmotor/plugin-<name>）")
     .option("--json", "JSON 输出")
-    .action(async (pkg: string, opts: { json?: boolean }) => {
+    .action((pkg: string, opts: { json?: boolean }) => {
       try {
         const name = fullName(pkg);
         const dir = installedPluginsDir();
