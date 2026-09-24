@@ -33,17 +33,15 @@
 ```json
 "files": [
   "dist/src/**/*.js",
-  "dist/src/**/*.json",
+  "dist/scripts/**/*.js",
   "skills/**/*.md",
   "catalog/**/*.json",
   "scripts/run.js",
   "scripts/postinstall.js",
-  "scripts/attendance",
-  "scripts/leave",
   "saicmotor.config.json"
 ]
 ```
-> 说明：`src/` 刻意不打包（源码不进发布包），自动构建只对本地开发环境生效。
+> 说明：`dist/scripts/**/*.js` 是 tsconfig 编译出的脚本产物；`src/` 刻意不打包（源码不进发布包）。`scripts/attendance`/`scripts/leave` 是 `.ts` 源码，不可直接打包（生产环境 `import()` `.ts` 抛 `ERR_UNKNOWN_FILE_EXTENSION`）。
 
 - [ ] **Step 3: repository 字段保留现状确认**
 
