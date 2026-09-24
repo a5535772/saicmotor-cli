@@ -99,8 +99,9 @@ export function registerPluginSkills(pkgRoot: string, skillDirs: string[]): Reco
     fs.writeFileSync(path.join(suiteDir, "SKILL.md"), suiteMd, "utf8");
     // 同时注册到 AI 客户端
     registerSkill(suiteDir, "saicmotor-suite");
-  } catch {
+  } catch (e: any) {
     // suite 生成失败不阻断 skills 注册
+    console.error(`[saicmotor] suite 路由刷新失败: ${e.message}`);
   }
 
   return allResults;
