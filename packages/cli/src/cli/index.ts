@@ -7,6 +7,7 @@ import { runMethod } from "../engine/run";
 import { formatJson, formatTable, formatEnvelope } from "../engine/output";
 import { registerAuth } from "./auth";
 import { registerPluginCommands } from "./plugin-cmds";
+import { registerToolingCommands } from "./tooling-cmds";
 import { handleError } from "./error";
 import { installSkills } from "../install/skills";
 
@@ -71,5 +72,6 @@ program
   });
 
 registerPluginCommands(program);
+registerToolingCommands(program);
 registerAuth(program);
 program.parseAsync(process.argv).catch(handleError);
