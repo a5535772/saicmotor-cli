@@ -3,5 +3,11 @@
   "engine": "^1.0.0",
   "catalog": ["catalog/services/*.json"],
   "skills": ["skills/saicmotor-user"],
-  "scripts": "scripts"
+  "scripts": "scripts",
+  "routes": {
+    "用户信息": "saicmotor-user",
+    "个人信息": "saicmotor-user",
+    "我是谁": "saicmotor-user",
+    "whoami": "saicmotor-user"
+  }
 }
