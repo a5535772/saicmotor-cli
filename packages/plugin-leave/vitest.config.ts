@@ -5,4 +5,5 @@ export default defineConfig({
     environment: "node",
     include: ["test/**/*.test.ts"],
   },
+  cacheDir: "../.vitest-cache",
 });

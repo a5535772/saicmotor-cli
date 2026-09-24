@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["test/**/*.test.ts"],
-    env: { SAICMOTOR_AUTH_TYPE: "password" }, // 测试默认 password，避免 exchange loopback
+    env: { SAICMOTOR_AUTH_TYPE: "password" },
   },
+  cacheDir: "../.vitest-cache",
 });

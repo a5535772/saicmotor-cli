@@ -40,6 +40,9 @@ yarn-error.log*
 # Test coverage
 coverage/
 
+# Vitest cache (workspace-local)
+packages/.vitest-cache/
+
 # TypeScript incremental build
 *.tsbuildinfo
 
