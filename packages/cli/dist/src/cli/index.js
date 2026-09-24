@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
 const config_1 = require("../config");
 const catalog_1 = require("../engine/catalog");
+const loader_1 = require("../plugin/loader");
 const run_1 = require("../engine/run");
 const output_1 = require("../engine/output");
 const auth_1 = require("./auth");
@@ -12,8 +13,17 @@ const skills_1 = require("../install/skills");
 const program = new commander_1.Command();
 program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.4.0");
 const config = (0, config_1.loadConfig)();
-const services = (0, catalog_1.loadCatalog)();
-for (const service of services) {
+// 加载核心 catalog + 插件 catalog
+const coreServices = (0, catalog_1.loadCatalog)();
+const { plugins, warnings } = (0, loader_1.loadPlugins)(config);
+const pluginServices = plugins.flatMap((p) => p.services);
+const allServices = [...coreServices, ...pluginServices];
+// 打印非致命警告
+for (const w of warnings) {
+    console.error(`[saicmotor] ${w}`);
+}
+// 动态注册命令（核心 + 全部插件）
+for (const service of allServices) {
     const svc = program.command(service.name).description(service.title ?? service.name);
     for (const [resourceName, resource] of Object.entries(service.resources)) {
         const resCmd = svc.command(resourceName);

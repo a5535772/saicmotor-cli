@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { loadConfig, toKebab, toCamel } from "../config";
 import { loadCatalog } from "../engine/catalog";
+import { loadPlugins } from "../plugin/loader";
 import { runMethod } from "../engine/run";
 import { formatJson, formatTable, formatEnvelope } from "../engine/output";
 import { registerAuth } from "./auth";
@@ -12,9 +13,20 @@ const program = new Command();
 program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.4.0");
 
 const config = loadConfig();
-const services = loadCatalog();
 
-for (const service of services) {
+// 加载核心 catalog + 插件 catalog
+const coreServices = loadCatalog();
+const { plugins, warnings } = loadPlugins(config);
+const pluginServices = plugins.flatMap((p) => p.services);
+const allServices = [...coreServices, ...pluginServices];
+
+// 打印非致命警告
+for (const w of warnings) {
+  console.error(`[saicmotor] ${w}`);
+}
+
+// 动态注册命令（核心 + 全部插件）
+for (const service of allServices) {
   const svc = program.command(service.name).description(service.title ?? service.name);
   for (const [resourceName, resource] of Object.entries(service.resources)) {
     const resCmd = svc.command(resourceName);

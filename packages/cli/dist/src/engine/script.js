@@ -41,8 +41,10 @@ exports.findScript = findScript;
 exports.executeScript = executeScript;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
+const config_1 = require("../config");
 const errors_1 = require("./errors");
 const pkg_root_1 = require("../pkg-root");
+const loader_1 = require("../plugin/loader");
 function scriptFileFor(serviceName, resourceName, methodName) {
     return node_path_1.default.join((0, pkg_root_1.distRoot)(), "scripts", serviceName, resourceName, `${methodName}.js`);
 }
@@ -56,8 +58,9 @@ function firstExisting(files) {
 /**
  * 脚本查找顺序：
  * 1. SAICMOTOR_SCRIPTS 显式覆盖（测试/定制）：<dir>/<svc>/<res>/<method>.{js,ts}
- * 2. 编译产物：dist/scripts/<svc>/<res>/<method>.js（安装形态）
- * 3. 源码树：scripts/<svc>/<res>/<method>.ts（本地 tsx 开发）
+ * 2. 插件 scripts 目录：<plugin-root>/<scripts-dir>/<svc>/<res>/<method>.js
+ * 3. 编译产物：dist/scripts/<svc>/<res>/<method>.js（安装形态）
+ * 4. 源码树：scripts/<svc>/<res>/<method>.ts（本地 tsx 开发）
  */
 function findScript(serviceName, resourceName, methodName) {
     const rel = node_path_1.default.join(serviceName, resourceName, methodName);
@@ -68,6 +71,20 @@ function findScript(serviceName, resourceName, methodName) {
         ]);
         if (override)
             return override;
+    }
+    // 插件 scripts 目录（延迟加载，避免潜在的循环依赖）
+    try {
+        const { plugins } = (0, loader_1.loadPlugins)((0, config_1.loadConfig)());
+        for (const plugin of plugins) {
+            if (plugin.manifest.scripts) {
+                const pluginScript = node_path_1.default.join(plugin.rootDir, plugin.manifest.scripts, `${rel}.js`);
+                if (node_fs_1.default.existsSync(pluginScript))
+                    return pluginScript;
+            }
+        }
+    }
+    catch {
+        // 插件不可用时静默跳过
     }
     const compiled = node_path_1.default.join((0, pkg_root_1.distRoot)(), "scripts", `${rel}.js`);
     if (node_fs_1.default.existsSync(compiled))
