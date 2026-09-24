@@ -9,6 +9,7 @@ const run_1 = require("../engine/run");
 const output_1 = require("../engine/output");
 const auth_1 = require("./auth");
 const plugin_cmds_1 = require("./plugin-cmds");
+const tooling_cmds_1 = require("./tooling-cmds");
 const error_1 = require("./error");
 const skills_1 = require("../install/skills");
 const program = new commander_1.Command();
@@ -73,6 +74,7 @@ program
     (0, skills_1.installSkills)({ force: opts.force || false });
 });
 (0, plugin_cmds_1.registerPluginCommands)(program);
+(0, tooling_cmds_1.registerToolingCommands)(program);
 (0, auth_1.registerAuth)(program);
 program.parseAsync(process.argv).catch(error_1.handleError);
 //# sourceMappingURL=index.js.map

@@ -3,5 +3,10 @@
   "engine": "^1.0.0",
   "catalog": ["catalog/services/*.json"],
   "skills": ["skills/saicmotor-attendance"],
-  "scripts": "scripts"
+  "scripts": "scripts",
+  "routes": {
+    "考勤": "saicmotor-attendance",
+    "打卡": "saicmotor-attendance",
+    "attendance": "saicmotor-attendance"
+  }
 }

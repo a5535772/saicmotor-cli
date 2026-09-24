@@ -45,8 +45,6 @@ describe("installSkills (filesystem-based registrar)", () => {
     const anySkillInstalled = Object.values(AI_CLIENT_SKILL_DIRS).some((dir) => {
       return (
         fs.existsSync(path.join(dir as string, "saicmotor-suite"))
-        || fs.existsSync(path.join(dir as string, "saicmotor-leave"))
-        || fs.existsSync(path.join(dir as string, "saicmotor-attendance"))
         || fs.existsSync(path.join(dir as string, "saicmotor-shared"))
       );
     });
@@ -105,8 +103,6 @@ describe("installSkills (filesystem-based registrar)", () => {
       const dirStr = dir as string;
       return (
         !fs.existsSync(path.join(dirStr, "saicmotor-suite"))
-        && !fs.existsSync(path.join(dirStr, "saicmotor-leave"))
-        && !fs.existsSync(path.join(dirStr, "saicmotor-attendance"))
         && !fs.existsSync(path.join(dirStr, "saicmotor-shared"))
       );
     });

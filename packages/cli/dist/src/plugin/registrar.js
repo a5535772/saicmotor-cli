@@ -11,6 +11,8 @@ exports.unregisterPluginSkills = unregisterPluginSkills;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_os_1 = __importDefault(require("node:os"));
+const suite_1 = require("./suite");
+const pkg_root_1 = require("../pkg-root");
 /** AI 客户端 skills 目录列表（集中常量化） */
 exports.AI_CLIENT_SKILL_DIRS = {
     claude: node_path_1.default.join(node_os_1.default.homedir(), ".claude", "skills"),
@@ -84,6 +86,21 @@ function registerPluginSkills(pkgRoot, skillDirs) {
         if (!node_fs_1.default.existsSync(skillMdPath))
             continue;
         allResults[skillName] = registerSkill(skillDir, skillName);
+    }
+    // 刷新 suite（基于所有已装插件的 routes 动态生成）
+    try {
+        const routes = (0, suite_1.buildSuiteRoutes)();
+        const suiteMd = (0, suite_1.generateSuiteSkill)(routes);
+        const suiteDir = node_path_1.default.join((0, pkg_root_1.findPackageRoot)(), "skills", "saicmotor-suite");
+        if (!node_fs_1.default.existsSync(suiteDir))
+            node_fs_1.default.mkdirSync(suiteDir, { recursive: true });
+        node_fs_1.default.writeFileSync(node_path_1.default.join(suiteDir, "SKILL.md"), suiteMd, "utf8");
+        // 同时注册到 AI 客户端
+        registerSkill(suiteDir, "saicmotor-suite");
+    }
+    catch (e) {
+        // suite 生成失败不阻断 skills 注册
+        console.error(`[saicmotor] suite 路由刷新失败: ${e.message}`);
     }
     return allResults;
 }

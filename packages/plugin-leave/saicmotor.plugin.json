@@ -3,5 +3,10 @@
   "engine": "^1.0.0",
   "catalog": ["catalog/services/*.json"],
   "skills": ["skills/saicmotor-leave"],
-  "scripts": "scripts"
+  "scripts": "scripts",
+  "routes": {
+    "请假": "saicmotor-leave",
+    "休假": "saicmotor-leave",
+    "leave": "saicmotor-leave"
+  }
 }
