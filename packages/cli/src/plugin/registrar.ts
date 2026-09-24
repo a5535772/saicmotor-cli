@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { buildSuiteRoutes, generateSuiteSkill } from "./suite";
+import { findPackageRoot } from "../pkg-root";
 
 /** AI 客户端 skills 目录列表（集中常量化） */
 export const AI_CLIENT_SKILL_DIRS: Record<string, string> = {
@@ -86,6 +88,19 @@ export function registerPluginSkills(pkgRoot: string, skillDirs: string[]): Reco
     if (!fs.existsSync(skillMdPath)) continue;
 
     allResults[skillName] = registerSkill(skillDir, skillName);
+  }
+
+  // 刷新 suite（基于所有已装插件的 routes 动态生成）
+  try {
+    const routes = buildSuiteRoutes();
+    const suiteMd = generateSuiteSkill(routes);
+    const suiteDir = path.join(findPackageRoot(), "skills", "saicmotor-suite");
+    if (!fs.existsSync(suiteDir)) fs.mkdirSync(suiteDir, { recursive: true });
+    fs.writeFileSync(path.join(suiteDir, "SKILL.md"), suiteMd, "utf8");
+    // 同时注册到 AI 客户端
+    registerSkill(suiteDir, "saicmotor-suite");
+  } catch {
+    // suite 生成失败不阻断 skills 注册
   }
 
   return allResults;
