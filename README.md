@@ -140,9 +140,43 @@ saicmotor attendance corrections submit --date 2026-09-21 --reason 忘记打卡 
 
 ---
 
+## 插件
+
+@saicmotor/cli 1.0 引入插件生态——业务能力以独立插件包分发，不碰核心代码。
+
+```bash
+# 命令行
+saicmotor plugin install leave --registry=<内部 registry>
+saicmotor plugin list
+saicmotor plugin list --json
+saicmotor plugin enable my-system
+saicmotor plugin disable my-system
+saicmotor plugin uninstall my-system
+saicmotor plugin upgrade my-system
+```
+
+### 业务插件开发
+
+不需要 clone 核心仓库。一条命令生成骨架，声明式开发为主，必要时才落脚本：
+
+```bash
+saicmotor create plugin my-system
+cd plugin-my-system
+npm install
+# 编辑 catalog/services/my-system.json（声明 API）
+# 编辑 skills/saicmotor-my-system/SKILL.md（给 AI 的操作手册）
+saicmotor dev                           # 本地联调
+saicmotor validate .                    # 校验通过则发版
+npm publish --registry=<内部 registry>
+```
+
+> 完整开发者手册 → [docs/DEVELOPER.md](docs/DEVELOPER.md)
+
+---
+
 ## 开发
 
-> 完整开发者指南见 [howto/DEVELOPER.md](howto/DEVELOPER.md)——环境搭建、新增业务系统、添加 skill、测试、发版流程。
+> 框架开发者指南见 [howto/DEVELOPER.md](howto/DEVELOPER.md)——环境搭建、新增业务系统、添加 skill、测试、发版流程。
 
 ### 前提
 
