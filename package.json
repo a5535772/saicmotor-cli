@@ -9,7 +9,8 @@
     "packages/plugin-attendance"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=packages/sdk && npm run build --workspaces",
+    "clean": "npm run clean --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "prepublishOnly": "echo '使用各包独立 npm publish，见 docs/DEVELOPER.md'"
   }

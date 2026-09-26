@@ -380,6 +380,64 @@ registerPluginSkills(pkgRoot, skillDirs)
 | Cursor / Agent | `~/.agents/skills/` |
 | CodeBuddy | `~/.codebuddy/skills/` |
 
+### 7.3 Suite 路由自动更新：`plugin install` 如何让 suite 感知
+
+`saicmotor plugin install leave` 执行后，**无需任何额外步骤**，`saicmotor-suite` 的路由表自动包含 `请假 → saicmotor-leave`。完整链路：
+
+```
+saicmotor plugin install leave
+  │
+  └─ plugin-cmds.ts: install action
+       │
+       ├─ 1. npm install @saicmotor/plugin-leave --prefix ~/.saicmotor/plugins/
+       │      → node_modules/@saicmotor/plugin-leave/
+       │
+       ├─ 2. 读取 node_modules/@saicmotor/plugin-leave/saicmotor.plugin.json
+       │      {
+       │        "name": "@saicmotor/plugin-leave",
+       │        "skills": ["skills/saicmotor-leave"],
+       │        "routes": {
+       │          "请假": "saicmotor-leave",
+       │          "休假": "saicmotor-leave",
+       │          "leave": "saicmotor-leave"
+       │        }
+       │      }
+       │
+       └─ 3. registerPluginSkills(pkgDir, ["skills/saicmotor-leave"])
+            │
+            ├─ 3a. registerSkill("saicmotor-leave")
+            │       → junction 到 ~/.claude/skills/saicmotor-leave/
+            │       → AI 可读到 leave 的完整操作手册
+            │
+            └─ 3b. 刷新 suite
+                 buildSuiteRoutes()
+                   └─ loadPlugins() → 重新扫描所有已装插件的 manifest
+                       │   plugin-leave:  { "请假": "saicmotor-leave", ... }
+                       │   plugin-attendance: { "考勤": "saicmotor-attendance", ... }
+                       │   plugin-user:      { "用户": "saicmotor-user", ... }
+                       └─ 合并为 { 请假→leave, 考勤→attendance, 用户→user, … }
+
+                 generateSuiteSkill(routes)
+                   └─ 生成 skills/saicmotor-suite/SKILL.md:
+                       | 请假 | saicmotor-leave |
+                       | 考勤 | saicmotor-attendance |
+                       | 用户 | saicmotor-user |
+
+                 registerSkill("saicmotor-suite")
+                   └─ 覆盖到 ~/.claude/skills/saicmotor-suite/
+```
+
+**关键设计决策**：
+
+| 决策 | 说明 |
+|------|------|
+| **全量重建，非增量追加** | `buildSuiteRoutes()` 每次重扫全部插件，确保卸载后路由也自动收缩 |
+| **routes 在 manifest 中声明** | 插件自己定义"我能处理什么意图"，引擎只负责聚合——零人工编排 |
+| **registerPluginSkills 内一步完成** | 注册 skill + 刷新 suite 是原子操作，不存在"skill 注册了但 suite 没更新"的中间态 |
+| **不依赖 `saicmotor install`** | `plugin install` 内部直接调用 `registerSkill` + `refreshSuite`，无需用户再手动跑 `saicmotor install` |
+
+> **总结**：`saicmotor install` 只负责注册内核 skill（suite + shared），之后每次 `plugin install` / `uninstall` 都会自动更新 suite 路由表。用户不需要理解这个机制——装完插件，AI 就能发现。
+
 ---
 
 ## 8. 开发者工具链

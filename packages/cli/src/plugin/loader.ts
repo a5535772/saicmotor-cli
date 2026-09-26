@@ -7,6 +7,39 @@ import type { Config } from "../config";
 import { installedPluginsDir, linkedPluginsDir } from "./paths";
 import { loadState, type PluginStateEntry } from "./state";
 
+/**
+ * 扫描目录下的插件候选。
+ * - linked/ 下插件直接以 plugin-* 目录存在
+ * - node_modules/ 下需要进入 @saicmotor/ 找到 plugin-*
+ * 返回 [pkgRoot, pkgRoot] 以便统一迭代。
+ */
+function scanEntries(root: string): Array<[string, string]> {
+  const result: Array<[string, string]> = [];
+  let entries: fs.Dirent[];
+  try { entries = fs.readdirSync(root, { withFileTypes: true }); }
+  catch { return result; }
+
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    if (e.name.startsWith("plugin-")) {
+      // linked/ 直接即是插件目录
+      result.push([e.name, path.join(root, e.name)]);
+    } else if (e.name.startsWith("@")) {
+      // npm 安装的 scoped 目录，进入找 plugin-*
+      const scopeDir = path.join(root, e.name);
+      let scopeEntries: fs.Dirent[];
+      try { scopeEntries = fs.readdirSync(scopeDir, { withFileTypes: true }); }
+      catch { continue; }
+      for (const se of scopeEntries) {
+        if (se.isDirectory() && se.name.startsWith("plugin-")) {
+          result.push([se.name, path.join(scopeDir, se.name)]);
+        }
+      }
+    }
+  }
+  return result;
+}
+
 /** 单个插件的加载结果 */
 export interface LoadedPlugin {
   manifest: PluginManifest;
@@ -36,20 +69,17 @@ export function loadPlugins(_config: Config): LoadResult {
   // 双根：linked/ 优先（dev 时覆盖已装版本）
   for (const root of [linkedPluginsDir(), installedPluginsDir()]) {
     if (!fs.existsSync(root)) continue;
-    let entries: fs.Dirent[];
-    try { entries = fs.readdirSync(root, { withFileTypes: true }); }
-    catch { continue; }
+    const scopes = scanEntries(root);
 
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      // 只识别 @saicmotor/plugin-* 前缀
-      if (!entry.name.startsWith("plugin-")) continue;
+    for (const [pkgName, pkgRoot] of scopes) {
+      // linked/ 里插件名即为目录名；installed 里在 @saicmotor/ 下
+      const entryName = path.basename(pkgRoot);
+      if (!entryName.startsWith("plugin-")) continue;
 
-      const pkgRoot = path.join(root, entry.name);
       const manifestPath = path.join(pkgRoot, "saicmotor.plugin.json");
 
       if (!fs.existsSync(manifestPath)) {
-        warnings.push(`插件 ${entry.name} 缺少 saicmotor.plugin.json，跳过`);
+        warnings.push(`插件 ${entryName} 缺少 saicmotor.plugin.json，跳过`);
         continue;
       }
 
@@ -58,7 +88,7 @@ export function loadPlugins(_config: Config): LoadResult {
         const raw = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
         manifest = PluginManifestSchema.parse(raw);
       } catch (e: any) {
-        warnings.push(`插件 ${entry.name} manifest 解析失败: ${e.message}`);
+        warnings.push(`插件 ${entryName} manifest 解析失败: ${e.message}`);
         continue;
       }
 

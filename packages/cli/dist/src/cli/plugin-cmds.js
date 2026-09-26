@@ -58,17 +58,22 @@ function registerPluginCommands(program) {
         .action((pkg, opts) => {
         try {
             const name = fullName(pkg);
-            const dir = (0, paths_1.installedPluginsDir)();
-            if (!node_fs_1.default.existsSync(dir))
-                node_fs_1.default.mkdirSync(dir, { recursive: true });
+            const prefixDir = (0, paths_1.pluginsDir)();
+            if (!node_fs_1.default.existsSync(prefixDir))
+                node_fs_1.default.mkdirSync(prefixDir, { recursive: true });
+            // 确保 prefixDir 下有 package.json，让 npm 能累积安装多个插件
+            const pkgJsonPath = node_path_1.default.join(prefixDir, "package.json");
+            if (!node_fs_1.default.existsSync(pkgJsonPath)) {
+                node_fs_1.default.writeFileSync(pkgJsonPath, JSON.stringify({ private: true }, null, 2));
+            }
             const registryFlag = opts.registry ? ` --registry=${opts.registry}` : "";
             console.error(`安装 ${name} ...`);
-            (0, node_child_process_1.execSync)(`npm install ${name} --prefix "${dir}" --legacy-peer-deps --no-save${registryFlag}`, {
+            (0, node_child_process_1.execSync)(`npm install ${name} --prefix "${prefixDir}" --legacy-peer-deps${registryFlag}`, {
                 stdio: "inherit",
-                cwd: dir,
+                cwd: prefixDir,
             });
-            // 读取 manifest 并注册 skills
-            const pkgDir = node_path_1.default.join(dir, "node_modules", name.replace("@saicmotor/", ""));
+            // npm --prefix 在 prefixDir 下创一层 node_modules/@saicmotor/plugin-*
+            const pkgDir = node_path_1.default.join(prefixDir, "node_modules", name);
             const manifestPath = node_path_1.default.join(pkgDir, "saicmotor.plugin.json");
             if (node_fs_1.default.existsSync(manifestPath)) {
                 const manifest = JSON.parse(node_fs_1.default.readFileSync(manifestPath, "utf8"));
@@ -131,7 +136,7 @@ function registerPluginCommands(program) {
             (0, registrar_1.unregisterPluginSkills)(entry.skills ?? []);
             // npm 卸载
             try {
-                (0, node_child_process_1.execSync)(`npm uninstall ${full} --prefix "${(0, paths_1.installedPluginsDir)()}"`, { stdio: "pipe" });
+                (0, node_child_process_1.execSync)(`npm uninstall ${full} --prefix "${(0, paths_1.pluginsDir)()}"`, { stdio: "pipe" });
             }
             catch {
                 // npm 卸载失败不阻断后续清理
@@ -220,9 +225,9 @@ function registerPluginCommands(program) {
         .action((name, opts) => {
         try {
             const full = fullName(name);
-            const dir = (0, paths_1.installedPluginsDir)();
+            const prefixDir = (0, paths_1.pluginsDir)();
             const registryFlag = opts.registry ? ` --registry=${opts.registry}` : "";
-            (0, node_child_process_1.execSync)(`npm update ${full} --prefix "${dir}" --legacy-peer-deps${registryFlag}`, { stdio: "inherit" });
+            (0, node_child_process_1.execSync)(`npm update ${full} --prefix "${prefixDir}" --legacy-peer-deps${registryFlag}`, { stdio: "inherit" });
             if (opts.json)
                 jsonOut({ upgraded: full });
             else

@@ -4,5 +4,3 @@ export declare function skillsAlreadyInstalled(): boolean;
 export declare function installSkills({ force }?: {
     force?: boolean;
 }): void;
-/** npm lifecycle postinstall 入口 */
-export declare function runPostinstall(): void;

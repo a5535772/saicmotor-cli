@@ -8,6 +8,7 @@
   "files": ["README.md", "dist/**/*.js", "dist/**/*.d.ts"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "test": "vitest run",
     "prepublishOnly": "npm run build && npm test"
   },

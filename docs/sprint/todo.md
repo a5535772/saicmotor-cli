@@ -15,6 +15,8 @@
 | 5 | [未登录时 AI 主动交互登录并续跑原任务](#5-优化未登录时-ai-主动发起交互式登录并续跑原任务) | 体验 | 🟢 低 | [ ] |
 | 6 | [网关内置飞书 App Secret（硬编码）——生产前改为密钥注入](#6-安全债网关内置飞书-app-secret硬编码生产前必须改为密钥注入) | 安全/技术债 | 🟡 中 | [ ] |
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
+| 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
+| 9 | [plugin disable 只禁命令未清 skill/suite](#9-bug-plugin-disable-只禁命令未清-skillsuite) | Bug | 🔴 高 | [ ] |
 
 **已完成**：[跳转](#已完成)
 
@@ -195,6 +197,54 @@ npm publish → prepublishOnly: "npm run build && npm test"
 - 发布流程绕过方案：`prepublishOnly` 脚本加 `SAICMOTOR_AUTH_TYPE=password npm test` 临时覆盖（但常规还是要修测试）
 
 **验收标准**：`npm publish --workspace=packages/cli` 全流程无浏览器弹窗，发布成功。
+
+---
+
+## [ ] 8. [构建优化] 根 build 时 SDK 编译两次
+
+**提出时间**：2026-09-26
+**优先级**：🟢 低（无害，仅强迫症）
+**现象**：`npm run build` 执行后 SDK 被编译两次：
+
+```
+# 根 build 脚本当前内容
+"build": "npm run build --workspace=packages/sdk && npm run build --workspaces"
+```
+
+`--workspaces` 已包含 `packages/sdk`，所以 SDK 先单独编译一次，又在 `--workspaces` 里并行编译一次。
+
+**修复方向**：
+- 方案 A：`npm run build --workspace=packages/sdk && npm run build --workspaces --workspace!=packages/sdk`（exclude 语法）
+- 方案 B：workspaces 声明里把 sdk 放在第一位（利用 npm 拓扑排序），只保留 `npm run build --workspaces`
+
+**验收标准**：`npm run build` 输出中 `@saicmotor/sdk` 只出现一次。
+
+---
+
+## [ ] 9. [BUG] plugin disable 只禁命令未清 skill/suite
+
+**提出时间**：2026-09-26
+**优先级**：🔴 高（disable ≠ 可选，用户期望与行为不符）
+**现象**：`saicmotor plugin disable leave` 后：
+
+| 检查项 | 实际状态 | 问题 |
+|--------|:--------:|------|
+| `--help` 中 leave 命令 | ❌ 消失 | ✅ 正确 |
+| `~/.claude/skills/saicmotor-leave/` | ❌ **仍存在** | skill 仍可被 AI 读取 |
+| `saicmotor-suite/SKILL.md` 中 leave 路由 | ❌ **仍存在** | AI 看到路由 → 调 leave skill → 拼命令 → CLI 报未知命令 |
+
+**AI 体验**：AI 先读 suite 路由表 → 命中 `请假 → saicmotor-leave` → 读 leave skill → 拼出命令 → `saicmotor leave balance query` → **"未知命令"**。用户只想"暂时关掉 leave"，AI 却觉得自己应该能用。
+
+**根因**：`plugin disable` 只设 `state.plugins[name].enabled = false`，loader 跳过加载 → 命令树消失。但：
+- skill 的 junction/目录仍然在 AI 目录下
+- suite 路由表未重新生成（`disable` 没调 `refreshSuite()`）
+
+**修复方向**：
+- `disable` 时：注销该插件的 skills + 刷新 suite（去除路由）
+- `enable` 时：重新注册 skills + 刷新 suite（恢复路由）
+- 或者更简单：`disable` 时调 `registerPluginSkills` 的同级逆向
+
+**验收标准**：`plugin disable leave` 后 AI 在 suite 中看不到 leave 路由，也读不到 `saicmotor-leave` skill；`plugin enable leave` 后全部恢复。
 
 ---
 

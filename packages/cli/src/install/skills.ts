@@ -1,5 +1,5 @@
 // src/install/skills.ts
-// skills 注册逻辑（postinstall 与 `saicmotor install` 共用）
+// skills 注册逻辑（用于 `saicmotor install`）
 // S8：收回核心"注册器"，不再依赖外部 skills CLI / GitHub repo
 import fs from "node:fs";
 import path from "node:path";
@@ -65,16 +65,4 @@ export function installSkills({ force = false }: { force?: boolean } = {}): void
   } else {
     console.log("⚠ AI skills 注册失败，稍后可手动运行: saicmotor install");
   }
-}
-
-/** npm lifecycle postinstall 入口 */
-export function runPostinstall(): void {
-  if (process.env.npm_command === "exec") {
-    console.log("npx 模式，跳过 skills 自动注册");
-    return;
-  }
-  console.log("\nsaicmotor CLI 安装完成。");
-  installSkills();
-  console.log("  首次使用前请运行: saicmotor auth login");
-  console.log("  探索命令: saicmotor --help\n");
 }

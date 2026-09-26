@@ -13,13 +13,12 @@
     "skills/**/*.md",
     "catalog/**/*.json",
     "scripts/run.js",
-    "scripts/postinstall.js",
     "saicmotor.config.json"
   ],
   "scripts": {
     "prepublishOnly": "npm run build && npm test",
-    "postinstall": "node scripts/postinstall.js || true",
     "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "test": "vitest run",
     "dev": "tsx src/cli/index.ts"
   },

@@ -11,6 +11,47 @@ const sdk_1 = require("@saicmotor/sdk");
 const catalog_1 = require("../schema/catalog");
 const paths_1 = require("./paths");
 const state_1 = require("./state");
+/**
+ * 扫描目录下的插件候选。
+ * - linked/ 下插件直接以 plugin-* 目录存在
+ * - node_modules/ 下需要进入 @saicmotor/ 找到 plugin-*
+ * 返回 [pkgRoot, pkgRoot] 以便统一迭代。
+ */
+function scanEntries(root) {
+    const result = [];
+    let entries;
+    try {
+        entries = node_fs_1.default.readdirSync(root, { withFileTypes: true });
+    }
+    catch {
+        return result;
+    }
+    for (const e of entries) {
+        if (!e.isDirectory())
+            continue;
+        if (e.name.startsWith("plugin-")) {
+            // linked/ 直接即是插件目录
+            result.push([e.name, node_path_1.default.join(root, e.name)]);
+        }
+        else if (e.name.startsWith("@")) {
+            // npm 安装的 scoped 目录，进入找 plugin-*
+            const scopeDir = node_path_1.default.join(root, e.name);
+            let scopeEntries;
+            try {
+                scopeEntries = node_fs_1.default.readdirSync(scopeDir, { withFileTypes: true });
+            }
+            catch {
+                continue;
+            }
+            for (const se of scopeEntries) {
+                if (se.isDirectory() && se.name.startsWith("plugin-")) {
+                    result.push([se.name, node_path_1.default.join(scopeDir, se.name)]);
+                }
+            }
+        }
+    }
+    return result;
+}
 const CORE_VERSION = "0.8.0";
 /**
  * 双根扫描并加载所有兼容插件。
@@ -24,23 +65,15 @@ function loadPlugins(_config) {
     for (const root of [(0, paths_1.linkedPluginsDir)(), (0, paths_1.installedPluginsDir)()]) {
         if (!node_fs_1.default.existsSync(root))
             continue;
-        let entries;
-        try {
-            entries = node_fs_1.default.readdirSync(root, { withFileTypes: true });
-        }
-        catch {
-            continue;
-        }
-        for (const entry of entries) {
-            if (!entry.isDirectory())
+        const scopes = scanEntries(root);
+        for (const [pkgName, pkgRoot] of scopes) {
+            // linked/ 里插件名即为目录名；installed 里在 @saicmotor/ 下
+            const entryName = node_path_1.default.basename(pkgRoot);
+            if (!entryName.startsWith("plugin-"))
                 continue;
-            // 只识别 @saicmotor/plugin-* 前缀
-            if (!entry.name.startsWith("plugin-"))
-                continue;
-            const pkgRoot = node_path_1.default.join(root, entry.name);
             const manifestPath = node_path_1.default.join(pkgRoot, "saicmotor.plugin.json");
             if (!node_fs_1.default.existsSync(manifestPath)) {
-                warnings.push(`插件 ${entry.name} 缺少 saicmotor.plugin.json，跳过`);
+                warnings.push(`插件 ${entryName} 缺少 saicmotor.plugin.json，跳过`);
                 continue;
             }
             let manifest;
@@ -49,7 +82,7 @@ function loadPlugins(_config) {
                 manifest = sdk_1.PluginManifestSchema.parse(raw);
             }
             catch (e) {
-                warnings.push(`插件 ${entry.name} manifest 解析失败: ${e.message}`);
+                warnings.push(`插件 ${entryName} manifest 解析失败: ${e.message}`);
                 continue;
             }
             // 同名去重：linked/ 已加载同名插件则跳过 installed/

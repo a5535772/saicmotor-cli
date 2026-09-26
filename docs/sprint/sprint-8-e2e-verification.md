@@ -54,7 +54,14 @@
 # 卸载 CLI 和全部插件
 npm uninstall -g @saicmotor/cli 2>$null
 
-# 清理 skills 残留
+# 卸载本地已安装的 skills（标准方式）
+npx skills rm saicmotor-suite -g 2>$null
+npx skills rm saicmotor-leave -g 2>$null
+npx skills rm saicmotor-attendance -g 2>$null
+npx skills rm saicmotor-user -g 2>$null
+npx skills rm saicmotor-shared -g 2>$null
+
+# 兜底：暴力清理所有 saicmotor skills 残留（junction/文件/目录）
 rm -r -Force $env:USERPROFILE\.claude\skills\saicmotor-* 2>$null
 rm -r -Force $env:USERPROFILE\.codebuddy\skills\saicmotor-* 2>$null
 rm -r -Force $env:USERPROFILE\.agents\skills\saicmotor-* 2>$null
@@ -88,14 +95,16 @@ S8 是 npm workspaces monorepo（5 个包在 `packages/` 下），需先编译 T
 ```powershell
 cd D:\work\things\saicmotor-cli-all\saicmotor-cli
 
-# ── 1. 编译全部 workspace ──
-npm run build --workspaces
+# ── 1. 清空旧 dist + 重新编译 ──
+npm run clean
+npm run build
 ```
-> **预期**：每个包的 `tsc` 都成功。
+> **预期**：`clean` 清空 5 个包的 `dist/`，`build` 每个包的 `tsc` 都成功。
 
 ```powershell
 # ── 2. 登录 registry（首次）──
 npm login --registry=http://localhost:4873
+#admin  123456
 
 # ── 3. 删除 Verdaccio 上所有旧包（确保从干净的 registry 开始）──
 npm unpublish @saicmotor/cli --registry=http://localhost:4873 --force 2>$null
@@ -145,15 +154,34 @@ npm view @saicmotor/plugin-user version --registry=http://localhost:4873
 npm install -g @saicmotor/cli --registry=http://localhost:4873
 ```
 > **预期**：`added` N packages，无致命错误。
+>
+> **说明**：npm v11 默认拦截全局 postinstall，skills 不会自动注册——这是预期行为，下一步手动注册。
 
-### 1.2 版本号
+### 1.2 注册内核 skills
+
+```powershell
+saicmotor install
+```
+> **预期**：`✓ 2 个 AI skills 已注册`（`saicmotor-suite` + `saicmotor-shared`）。
+
+```powershell
+# 验证内核 skill 已落盘
+$core = @("saicmotor-suite", "saicmotor-shared")
+foreach ($s in $core) {
+    $path = "$env:USERPROFILE\.claude\skills\$s\SKILL.md"
+    if (Test-Path $path) { Write-Host "✓ $s" } else { Write-Host "✗ $s 缺失" }
+}
+```
+> **预期**：全部 `✓`。
+
+### 1.3 版本号
 
 ```powershell
 saicmotor --version
 ```
 > **预期**：`0.8.0`
 
-### 1.3 帮助输出——确认只显示核心框架命令
+### 1.4 帮助输出——确认只显示核心框架命令
 
 ```powershell
 saicmotor --help
@@ -171,7 +199,7 @@ saicmotor --help
 >
 > **关键验证**：此时 **不应出现** `leave` 和 `attendance` 命令——因插件尚未安装，核心引擎不内建任何业务命令。
 
-### 1.4 plugin list——当前为空
+### 1.5 plugin list——当前为空
 
 ```powershell
 saicmotor plugin list
@@ -256,9 +284,9 @@ saicmotor --help
 ### 2.7 upgrade
 
 ```powershell
-saicmotor plugin upgrade leave --json
+saicmotor plugin upgrade leave --registry=http://localhost:4873 --json
 ```
-> **预期**：JSON 输出含升级结果。
+> **预期**：JSON 输出含升级结果。（`--registry` 必带，否则走公共 npm 404）
 
 ### 2.8 uninstall 单个插件
 
@@ -336,18 +364,20 @@ saicmotor attendance corrections submit --date 2026-09-21 --reason 忘记打卡 
 
 ## 阶段 4 — Skills 注册 & AI 发现
 
-### 4.1 注册 skills
+### 4.1 注册全部 skills
 
 ```powershell
-saicmotor install
+saicmotor install --force
 ```
-> **预期**：`✓ X 个 AI skills 已注册`（首次），或 `AI skills 已安装，跳过`（之前装过则加 `--force`）。
+> `saicmotor install` 首次在阶段 1 已调用，此处 `--force` 强制刷新，确保内核 + 插件 skill 全量注册。
+>
+> **预期**：`✓ 5 个 AI skills 已注册`（suite + shared + leave + attendance + user）。
 
 ### 4.2 确认 SKILL.md 落盘
 
 ```powershell
-# 一次验证四个 skill
-$skills = @("saicmotor-suite", "saicmotor-leave", "saicmotor-attendance")
+# 一次验证五个 skill
+$skills = @("saicmotor-suite", "saicmotor-shared", "saicmotor-leave", "saicmotor-attendance", "saicmotor-user")
 foreach ($s in $skills) {
     $path = "$env:USERPROFILE\.claude\skills\$s\SKILL.md"
     if (Test-Path $path) { Write-Host "✓ $s" } else { Write-Host "✗ $s 缺失" }
@@ -548,9 +578,10 @@ rm -r -Force $env:USERPROFILE\.saicmotor 2>$null
 |------|------|:---:|------|
 | 0.3 | 四个包全部 publish 成功 | | |
 | 0.4 | mock-server 启动（2 个端口） | | ➊ |
-| 1.2 | `--version` 输出 `0.8.0` | | |
-| 1.3 | `--help` 无 leave/attendance（插件未装） | | ➋ |
-| 1.4 | `plugin list` 初始为空 | | ➋ |
+| 1.2 | `saicmotor install` 注册内核 skills | | |
+| 1.3 | `--version` 输出 `0.8.0` | | |
+| 1.4 | `--help` 无 leave/attendance（插件未装） | | ➋ |
+| 1.5 | `plugin list` 初始为空 | | ➋ |
 | 2.1 | `plugin install leave` 成功 | | |
 | 2.3 | `plugin list` 显示三个插件 | | ➌ |
 | 2.4 | `--help` 出现 leave/attendance | | |

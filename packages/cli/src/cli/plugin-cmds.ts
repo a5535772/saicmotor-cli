@@ -3,7 +3,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { loadState, saveState } from "../plugin/state";
-import { installedPluginsDir } from "../plugin/paths";
+import { installedPluginsDir, pluginsDir } from "../plugin/paths";
 import { loadPlugins } from "../plugin/loader";
 import { loadConfig } from "../config";
 import {
@@ -59,18 +59,24 @@ export function registerPluginCommands(program: Command): void {
     .action((pkg: string, opts: { json?: boolean; registry?: string }) => {
       try {
         const name = fullName(pkg);
-        const dir = installedPluginsDir();
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const prefixDir = pluginsDir();
+        if (!fs.existsSync(prefixDir)) fs.mkdirSync(prefixDir, { recursive: true });
+
+        // 确保 prefixDir 下有 package.json，让 npm 能累积安装多个插件
+        const pkgJsonPath = path.join(prefixDir, "package.json");
+        if (!fs.existsSync(pkgJsonPath)) {
+          fs.writeFileSync(pkgJsonPath, JSON.stringify({ private: true }, null, 2));
+        }
 
         const registryFlag = opts.registry ? ` --registry=${opts.registry}` : "";
         console.error(`安装 ${name} ...`);
-        execSync(`npm install ${name} --prefix "${dir}" --legacy-peer-deps --no-save${registryFlag}`, {
+        execSync(`npm install ${name} --prefix "${prefixDir}" --legacy-peer-deps${registryFlag}`, {
           stdio: "inherit",
-          cwd: dir,
+          cwd: prefixDir,
         });
 
-        // 读取 manifest 并注册 skills
-        const pkgDir = path.join(dir, "node_modules", name.replace("@saicmotor/", ""));
+        // npm --prefix 在 prefixDir 下创一层 node_modules/@saicmotor/plugin-*
+        const pkgDir = path.join(prefixDir, "node_modules", name);
         const manifestPath = path.join(pkgDir, "saicmotor.plugin.json");
         if (fs.existsSync(manifestPath)) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
@@ -131,7 +137,7 @@ export function registerPluginCommands(program: Command): void {
 
         // npm 卸载
         try {
-          execSync(`npm uninstall ${full} --prefix "${installedPluginsDir()}"`, { stdio: "pipe" });
+          execSync(`npm uninstall ${full} --prefix "${pluginsDir()}"`, { stdio: "pipe" });
         } catch {
           // npm 卸载失败不阻断后续清理
         }
@@ -215,9 +221,9 @@ export function registerPluginCommands(program: Command): void {
     .action((name: string, opts: { json?: boolean; registry?: string }) => {
       try {
         const full = fullName(name);
-        const dir = installedPluginsDir();
+        const prefixDir = pluginsDir();
         const registryFlag = opts.registry ? ` --registry=${opts.registry}` : "";
-        execSync(`npm update ${full} --prefix "${dir}" --legacy-peer-deps${registryFlag}`, { stdio: "inherit" });
+        execSync(`npm update ${full} --prefix "${prefixDir}" --legacy-peer-deps${registryFlag}`, { stdio: "inherit" });
         if (opts.json) jsonOut({ upgraded: full });
         else console.log(`✓ ${full} 已升级`);
       } catch (e: any) {
