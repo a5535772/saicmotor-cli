@@ -19,7 +19,9 @@
 | 9 | [plugin disable 只禁命令未清 skill/suite](#9-bug-plugin-disable-只禁命令未清-skillsuite) | Bug | 🔴 高 | [ ] |
 | 10 | [PowerShell Get-Content 显示 SKILL.md 中文乱码](#10-bug-powershell-get-content-显示-skillmd-中文乱码) | Bug | 🟢 低 | [x] |
 
-**已完成**：[跳转](#已完成)
+| 11 | [手册中 `saicmotor install` 与 `plugin install` 职责混淆](#11-文档手册中-saicmotor-install-与-plugin-install-职责混淆) | 文档 | 🟢 低 | [x] |
+	
+	**已完成**：[跳转](#已完成)
 
 ---
 
@@ -270,6 +272,22 @@ Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
 
 **验收标准**：PowerShell 中 `Get-Content`（无 `-Encoding`）显示中文正常。
 **决议**：采用方案 B，在 `sprint-8-e2e-verification.md` 手动验证手册中所有 `Get-Content` 调用加上 `-Encoding UTF8`。不做代码修改（不改 BOM），问题仅在 PowerShell 侧。
+
+---
+
+## [x] 11. [文档] 手册中 `saicmotor install` 与 `plugin install` 职责混淆
+
+**提出时间**：2026-09-26
+**优先级**：🟢 低
+**类型**：文档
+**现象**：手册中多处出现"先 `plugin uninstall leave` → 再 `saicmotor install --force`"这种多余步骤——`plugin install/uninstall` 内部已调 `refreshSuite()`，无需手动重跑 `saicmotor install`。
+
+**根因**：`saicmotor install` 只注册内核 skill（suite + shared），`plugin install` 自动注册插件 skills + 刷新 suite——两者职责不同但名称相似，容易记混。
+
+**修复**：
+- 手册 4.4 移除多余的 `saicmotor install --force`
+- S8 能力速览表 `skills 注册` 说明改为"注册内核 skills；插件 skills 由 `plugin install` 自动注册"
+- 手册 4.1 和 4.3 的说明文字此前已修正
 
 ---
 

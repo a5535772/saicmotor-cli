@@ -25,7 +25,7 @@
 | 脚手架 | `create plugin <name>` | 生成标准插件工程 |
 | 校验 | `validate <dir>` | manifest zod 校验 |
 | 联调 | `dev [--stop]` | junction link 到 linked/ |
-| skills 注册 | `install [--force]` | 按各插件 skills 注册到 AI 客户端 |
+| skills 注册 | `install [--force]` | 注册内核 skills（suite + shared）；插件 skills 由 `plugin install` 自动注册 |
 | suite 聚合 | 随 install/uninstall | 按 routes 字段动态生成路由表 |
 
 ---
@@ -405,10 +405,11 @@ Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding
 
 ```powershell
 saicmotor plugin install leave --registry=http://localhost:4873
-saicmotor install --force
 Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding UTF8
 ```
 > **预期**：leave 路由恢复。
+>
+> **说明**：`plugin install` 内部调 `refreshSuite()`，无需再手动 `saicmotor install --force`。
 
 ### 4.5 AI 实战验证
 
