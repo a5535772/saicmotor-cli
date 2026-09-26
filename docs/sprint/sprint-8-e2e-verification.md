@@ -418,22 +418,22 @@ Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding
 **测试 A — 能力发现：**
 > `你能用 saicmotor 做什么？简要列出可用的业务能力。`
 
-- [ ] **4.5a** AI 提到 `请假` / `leave` 和 `考勤` / `attendance`
+- [x] **4.5a** AI 提到 `请假` / `leave` 和 `考勤` / `attendance`
 
 **测试 B — 拼出 leave 命令：**
 > `帮我提一个请假申请：员工 EMP001，年假，2026-09-25 到 2026-09-27，用 saicmotor`
 
-- [ ] **4.5b** AI 能拼出 `saicmotor leave applications submit --start-date 2026-09-25 --end-date 2026-09-27 --reason 年假 --yes`
+- [x] **4.5b** AI 能拼出 `saicmotor leave applications submit --start-date 2026-09-25 --end-date 2026-09-27 --reason 年假 --yes`
 
 **测试 C — 拼出 attendance 命令：**
 > `EMP003 在 2026-09-26 忘记打卡了，帮他用 saicmotor 提交补卡`
 
-- [ ] **4.5c** AI 能拼出 `saicmotor attendance corrections submit --date 2026-09-26 --reason 忘记打卡`
+- [x] **4.5c** AI 能拼出 `saicmotor attendance corrections submit --date 2026-09-26 --reason 忘记打卡`
 
 **测试 D — plugin list --json 机读：**
 > `读取 saicmotor plugin list --json 的输出，告诉我当前装了哪些插件及其版本`
 
-- [ ] **4.5d** AI 能正确解析 JSON 并列出插件名和版本
+- [x] **4.5d** AI 能正确解析 JSON 并列出插件名和版本
 
 **截图位：➎ Skills 注册 & AI 发现（SKILL.md 落盘 + suite 内容 + AI 问答）**
 
@@ -585,14 +585,14 @@ rm -r -Force $env:USERPROFILE\.saicmotor 2>$null
 | 3.3 | 三种格式查询正常 | | ➍ |
 | 3.4 | 请假：dry-run → 拒 → 提交 | | ➍ |
 | 3.5 | 补卡：dry-run → 提交 | | |
-| 4.1 | 五个 SKILL.md 落盘 | | ➎ |
-| 4.2 | suite 路由聚合正确 | | ➎ |
-| 4.3 | 卸载 leave → suite 路由收缩 | | |
-| 4.4 | 重装 leave → suite 路由恢复 | | |
-| 4.5a | AI 发现 saicmotor 能力 | | ➎ |
-| 4.5b | AI 拼出 leave 命令 | | |
-| 4.5c | AI 拼出 attendance 命令 | | |
-| 4.5d | AI 解析 plugin list --json | | |
+| 4.1 | 五个 SKILL.md 落盘 | ✅ | ➎ |
+| 4.2 | suite 路由聚合正确 | ✅ | ➎ |
+| 4.3 | 卸载 leave → suite 路由收缩 | ✅ | |
+| 4.4 | 重装 leave → suite 路由恢复 | ✅ | |
+| 4.5a | AI 发现 saicmotor 能力 | ✅ | ➎ |
+| 4.5b | AI 拼出 leave 命令 | ✅ | |
+| 4.5c | AI 拼出 attendance 命令 | ✅ | |
+| 4.5d | AI 解析 plugin list --json | ✅ | |
 | 5.1 | `create plugin` 生成正确骨架 | | ➏ |
 | 5.2 | `validate` 通过 | | ➏ |
 | 5.3 | 坏 manifest 被拒绝 | | |
