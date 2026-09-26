@@ -17,6 +17,7 @@
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 | 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
 | 9 | [plugin disable 只禁命令未清 skill/suite](#9-bug-plugin-disable-只禁命令未清-skillsuite) | Bug | 🔴 高 | [ ] |
+| 10 | [PowerShell Get-Content 显示 SKILL.md 中文乱码](#10-bug-powershell-get-content-显示-skillmd-中文乱码) | Bug | 🟢 低 | [x] |
 
 **已完成**：[跳转](#已完成)
 
@@ -245,6 +246,30 @@ npm publish → prepublishOnly: "npm run build && npm test"
 - 或者更简单：`disable` 时调 `registerPluginSkills` 的同级逆向
 
 **验收标准**：`plugin disable leave` 后 AI 在 suite 中看不到 leave 路由，也读不到 `saicmotor-leave` skill；`plugin enable leave` 后全部恢复。
+
+---
+
+## [ ] 10. [BUG] PowerShell Get-Content 显示 SKILL.md 中文乱码
+
+**提出时间**：2026-09-26
+**优先级**：🟢 低（不影响功能，纯体验）
+**现象**：
+
+```powershell
+Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
+```
+
+输出中文全是乱码（`缁熶竴鍏ュ彛` 等），因为 `Get-Content` 默认不按 UTF-8 解码。
+
+**根因**：`generateSuiteSkill()` 写入 SKILL.md 时没加 BOM，PowerShell 的 `Get-Content` 默认使用系统代码页（GBK）而非 UTF-8。
+
+**修复方向**：
+- 方案 A（推荐）：`fs.writeFileSync` 时加 `﻿`（BOM）前缀，PowerShell 自动识别为 UTF-8
+- 方案 B：手册里改用 `Get-Content -Encoding UTF8` ✅ **已采用**
+- 方案 C：写入时用 `encoding: "utf8"` 已经是了，问题在 PowerShell 侧，不管也行
+
+**验收标准**：PowerShell 中 `Get-Content`（无 `-Encoding`）显示中文正常。
+**决议**：采用方案 B，在 `sprint-8-e2e-verification.md` 手动验证手册中所有 `Get-Content` 调用加上 `-Encoding UTF8`。不做代码修改（不改 BOM），问题仅在 PowerShell 侧。
 
 ---
 

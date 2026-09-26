@@ -315,7 +315,7 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.saicmotor"
 ### 3.2 登录
 
 ```powershell
-saicmotor auth login --username zhangsan --password 123456
+saicmotor auth login
 saicmotor auth status
 ```
 > **预期**：登录成功，status 显示 `已登录`。
@@ -364,19 +364,12 @@ saicmotor attendance corrections submit --date 2026-09-21 --reason 忘记打卡 
 
 ## 阶段 4 — Skills 注册 & AI 发现
 
-### 4.1 注册全部 skills
+### 4.1 确认 plugin install 已自动注册插件 skills
+
+`plugin install` 会在安装时通过 `registerPluginSkills()` 自动注册插件的 skills，无需手动调用 `saicmotor install`。
 
 ```powershell
-saicmotor install --force
-```
-> `saicmotor install` 首次在阶段 1 已调用，此处 `--force` 强制刷新，确保内核 + 插件 skill 全量注册。
->
-> **预期**：`✓ 5 个 AI skills 已注册`（suite + shared + leave + attendance + user）。
-
-### 4.2 确认 SKILL.md 落盘
-
-```powershell
-# 一次验证五个 skill
+# 验证内核 + 插件 skill 全部可见
 $skills = @("saicmotor-suite", "saicmotor-shared", "saicmotor-leave", "saicmotor-attendance", "saicmotor-user")
 foreach ($s in $skills) {
     $path = "$env:USERPROFILE\.claude\skills\$s\SKILL.md"
@@ -384,63 +377,62 @@ foreach ($s in $skills) {
 }
 ```
 > **预期**：全部 `✓`。
+>
+> **说明**：`saicmotor install`（阶段 1.2）只负责内核 skill（suite + shared）。三个插件 skill 由各自的 `plugin install` 自动注册——suite 路由表也在那时一并刷新。
 
-### 4.3 验证 suite 路由聚合
+### 4.2 验证 suite 路由聚合
 
 ```powershell
-Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
+Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding UTF8
 ```
 > **预期**：frontmatter 含 `name: saicmotor-suite` 和 `description`；正文列出意图 → skill 路由表。包含条目如：
 > - `请假 → saicmotor-leave`
 > - `考勤 → saicmotor-attendance`
 > - `打卡 → saicmotor-attendance`
 
-### 4.4 卸载后 suite 自动收缩
+### 4.3 卸载后 suite 自动收缩
 
 ```powershell
 # 先卸载 leave
 saicmotor plugin uninstall leave --json
 
-# 重新注册 skills
-saicmotor install --force
-
 # 再查看 suite
-Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
+Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding UTF8
 ```
 > **预期**：suite 中不再包含 leave 相关路由行。仅剩 attendance 路由。
 
-### 4.5 重装 leave 恢复完整 suite
+### 4.4 重装 leave 恢复完整 suite
 
 ```powershell
 saicmotor plugin install leave --registry=http://localhost:4873
 saicmotor install --force
-Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
+Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding UTF8
 ```
 > **预期**：leave 路由恢复。
 
-### 4.6 AI 实战验证
+### 4.5 AI 实战验证
 
 > 在 **Claude Code** 当前会话中依次测试。
 
 **测试 A — 能力发现：**
 > `你能用 saicmotor 做什么？简要列出可用的业务能力。`
 
-- [ ] **4.6a** AI 提到 `请假` / `leave` 和 `考勤` / `attendance`
+- [ ] **4.5a** AI 提到 `请假` / `leave` 和 `考勤` / `attendance`
 
 **测试 B — 拼出 leave 命令：**
 > `帮我提一个请假申请：员工 EMP001，年假，2026-09-25 到 2026-09-27，用 saicmotor`
 
-- [ ] **4.6b** AI 能拼出 `saicmotor leave applications submit --start-date 2026-09-25 --end-date 2026-09-27 --reason 年假 --yes`
+- [ ] **4.5b** AI 能拼出 `saicmotor leave applications submit --start-date 2026-09-25 --end-date 2026-09-27 --reason 年假 --yes`
 
 **测试 C — 拼出 attendance 命令：**
 > `EMP003 在 2026-09-26 忘记打卡了，帮他用 saicmotor 提交补卡`
 
-- [ ] **4.6c** AI 能拼出 `saicmotor attendance corrections submit --date 2026-09-26 --reason 忘记打卡`
+- [ ] **4.5c** AI 能拼出 `saicmotor attendance corrections submit --date 2026-09-26 --reason 忘记打卡`
 
 **测试 D — plugin list --json 机读：**
 > `读取 saicmotor plugin list --json 的输出，告诉我当前装了哪些插件及其版本`
 
-- [ ] **4.6d** AI 能正确解析 JSON 并列出插件名和版本
+- [ ] **4.5d** AI 能正确解析 JSON 并列出插件名和版本
 
 **截图位：➎ Skills 注册 & AI 发现（SKILL.md 落盘 + suite 内容 + AI 问答）**
 
@@ -592,15 +584,14 @@ rm -r -Force $env:USERPROFILE\.saicmotor 2>$null
 | 3.3 | 三种格式查询正常 | | ➍ |
 | 3.4 | 请假：dry-run → 拒 → 提交 | | ➍ |
 | 3.5 | 补卡：dry-run → 提交 | | |
-| 4.1 | `saicmotor install` 注册 skills | | |
-| 4.2 | 三个 SKILL.md 落盘 | | ➎ |
-| 4.3 | suite 路由聚合正确 | | ➎ |
-| 4.4 | 卸载 leave → suite 路由收缩 | | |
-| 4.5 | 重装 leave → suite 路由恢复 | | |
-| 4.6a | AI 发现 saicmotor 能力 | | ➎ |
-| 4.6b | AI 拼出 leave 命令 | | |
-| 4.6c | AI 拼出 attendance 命令 | | |
-| 4.6d | AI 解析 plugin list --json | | |
+| 4.1 | 五个 SKILL.md 落盘 | | ➎ |
+| 4.2 | suite 路由聚合正确 | | ➎ |
+| 4.3 | 卸载 leave → suite 路由收缩 | | |
+| 4.4 | 重装 leave → suite 路由恢复 | | |
+| 4.5a | AI 发现 saicmotor 能力 | | ➎ |
+| 4.5b | AI 拼出 leave 命令 | | |
+| 4.5c | AI 拼出 attendance 命令 | | |
+| 4.5d | AI 解析 plugin list --json | | |
 | 5.1 | `create plugin` 生成正确骨架 | | ➏ |
 | 5.2 | `validate` 通过 | | ➏ |
 | 5.3 | 坏 manifest 被拒绝 | | |
