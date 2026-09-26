@@ -1,6 +1,6 @@
 # saicmotor 2.0 架构白皮书
 
-> **@saicmotor/cli 1.0.0** — 面向 AI Agent 的插件化企业 CLI 平台。
+> **@saicmotor/cli 0.8.0** — 面向 AI Agent 的插件化企业 CLI 平台。
 > 声明式接口、AI 原生路由、引擎管道执行、插件生态分发。
 
 ---
@@ -18,6 +18,7 @@
 - [9. 配置与认证](#9-配置与认证)
 - [10. 仓库结构](#10-仓库结构)
 - [11. 数据流与序列图](#11-数据流与序列图)
+- [12. 包间依赖：CLI ↔ SDK ↔ 插件](#12-包间依赖cli--sdk--插件)
 
 ---
 
@@ -233,7 +234,7 @@ plugin-<name>/                       ← 独立的 npm 包 / Git 仓库
 ```typescript
 {
   name: string;                              // 必须 "@saicmotor/plugin-*"
-  engine: string;                            // semver range，如 "^1.0.0"
+  engine: string;                            // semver range，如 "^0.8.0"
   catalog?: string[];                        // catalog 文件列表
   skills?: string[];                         // skills 目录列表
   scripts?: string;                          // scripts 根目录
@@ -592,6 +593,107 @@ CLI     │  plugin-cmds.ts
                    ✅ 加载
                    services = 无冲突的子集
 ```
+
+## 12. 包间依赖：CLI ↔ SDK ↔ 插件
+
+### 12.1 为什么 CLI 依赖 SDK
+
+`@saicmotor/cli` 的 `dependencies` 声明：
+
+```json
+"dependencies": {
+  "@saicmotor/sdk": "*",
+  "commander": "^12.1.0",
+  "semver": "^7.8.5",
+  "zod": "^3.23.8"
+}
+```
+
+SDK 是 **runtime 依赖**——不是 devDependency，不是 peerDependency。因为 CLI 在运行时直接 import SDK：
+
+```typescript
+// packages/cli/src/plugin/loader.ts
+import { PluginManifestSchema, type PluginManifest } from "@saicmotor/sdk";
+
+// packages/cli/src/cli/tooling-cmds.ts
+import { PluginManifestSchema } from "@saicmotor/sdk";
+```
+
+这两个文件在 CLI 启动时就会被加载（loader.ts 扫描插件、tooling-cmds.ts 校验用户写的 manifest），所以 `@saicmotor/sdk` 不是"编译期才要"，而是"运行时必须有"。
+
+### 12.2 SDK 不是什么、是什么
+
+| SDK 不是 | SDK 是 |
+|----------|--------|
+| 独立可执行的工具 | 纯类型 + 纯 schema 的契约包 |
+| 插件必须 import 的运行时 | 插件开发时的**类型参考** + CLI 运行时的 **manifest 校验器** |
+| 提供引擎逻辑（HTTP/认证/管道） | 只描述"长什么样"，不描述"怎么做" |
+
+SDK 拆出来有**两个消费方**，各取所需：
+
+```
+@saicmotor/sdk 提供：
+  ├── PluginManifestSchema (zod)        ← CLI 用它校验插件的 saicmotor.plugin.json
+  ├── PluginManifest (TS type)          ← CLI + 插件共享的类型
+  ├── ScriptContext (interface)         ← 插件脚本的 ctx 参数签名
+  ├── ScriptFn / RunResult (type)       ← 插件脚本的入出参签名
+  ├── Service / Method / Field (type)   ← catalog JSON 的类型
+  └── Config / AuthConfig (type)        ← 配置结构的类型
+
+消费方 A：@saicmotor/cli（runtime dep）
+  loader.ts    → import PluginManifestSchema, PluginManifest
+  tooling-cmds.ts → import PluginManifestSchema
+
+消费方 B：各插件包（devDependency）
+  写脚本时参考 ScriptContext 类型，不 import 到源码中
+```
+
+### 12.3 为什么放在 monorepo 内而不是独立仓库
+
+| 决策 | 理由 |
+|------|------|
+| SDK 与 CLI 同仓 | 插件契约在 S8 期间会高频变更，同仓原子改动避免多仓连环发版 |
+| 插件包（leave/attendance/user）同仓 | 作为参考插件，保证引擎改动被真实插件即时回归 |
+| 业务插件一律外仓 | 从第一天起就由 `create plugin` 脚手架生成在业务团队自己的仓库，**永不进 monorepo** |
+
+### 12.4 三层依赖链
+
+```
+                    ┌─────────────────────────┐
+                    │    @saicmotor/sdk        │
+                    │    (纯类型 + zod schema)   │
+                    └──────┬──────────────────┘
+                           │
+              ┌────────────┼────────────┐
+              │ runtime: "*"             │ devDependency
+              ▼                          ▼
+    ┌──────────────────┐    ┌──────────────────────────┐
+    │  @saicmotor/cli   │    │  @saicmotor/plugin-leave  │
+    │  (核心引擎)        │    │  @saicmotor/plugin-atten..│
+    │                    │    │  @saicmotor/plugin-user   │
+    │  loader.ts         │    │                            │
+    │  └─ import Schema  │    │  scripts/*.ts              │
+    │     from SDK       │    │  └─ reference ScriptContext│
+    │                    │    │     type from SDK          │
+    │  tooling-cmds.ts   │    │                            │
+    │  └─ import Schema  │    │  (不 import 到运行时代码)   │
+    │     from SDK       │    │                            │
+    └────────┬───────────┘    └──────────────────────────┘
+             │
+             │ npm install 插件 → ~/.saicmotor/plugins/node_modules/
+             │ npm workspaces 自动 symlink packages/sdk/
+             ▼
+    ┌───────────────────────────────────────────┐
+    │  ~/.saicmotor/plugins/                     │
+    │  ├── node_modules/@saicmotor/plugin-*      │
+    │  │   ├── saicmotor.plugin.json  ← SDK schema 校验    │
+    │  │   ├── catalog/services/*.json ← Service 类型描述  │
+    │  │   └── scripts/*.js            ← ScriptContext 是 ctx 签名 │
+    │  └── linked/@saicmotor/plugin-*  (dev link)               │
+    └───────────────────────────────────────────┘
+```
+
+**关键：** SDK 定义的是"插件长什么样"——manifest 的 zod schema、Service 的 TS 接口、插件脚本的 `(ctx: ScriptContext)` 签名。CLI 是"执行校验的人"——用 SDK 的 schema 校验每个插件，注入 `ensureToken` 到脚本的上下文。插件是"被校验的对象"——manifest 必须满足 SDK schema，脚本签名必须匹配 `ScriptFn`。
 
 ---
 

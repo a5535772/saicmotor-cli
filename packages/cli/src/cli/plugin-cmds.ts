@@ -55,14 +55,16 @@ export function registerPluginCommands(program: Command): void {
     .command("install <pkg>")
     .description("安装插件（短名自动展开为 @saicmotor/plugin-<name>）")
     .option("--json", "JSON 输出")
-    .action((pkg: string, opts: { json?: boolean }) => {
+    .option("--registry <url>", "npm registry 地址")
+    .action((pkg: string, opts: { json?: boolean; registry?: string }) => {
       try {
         const name = fullName(pkg);
         const dir = installedPluginsDir();
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
+        const registryFlag = opts.registry ? ` --registry=${opts.registry}` : "";
         console.error(`安装 ${name} ...`);
-        execSync(`npm install ${name} --prefix "${dir}" --legacy-peer-deps --no-save`, {
+        execSync(`npm install ${name} --prefix "${dir}" --legacy-peer-deps --no-save${registryFlag}`, {
           stdio: "inherit",
           cwd: dir,
         });
@@ -209,11 +211,13 @@ export function registerPluginCommands(program: Command): void {
     .command("upgrade <name>")
     .description("升级插件到 latest")
     .option("--json", "JSON 输出")
-    .action((name: string, opts: { json?: boolean }) => {
+    .option("--registry <url>", "npm registry 地址")
+    .action((name: string, opts: { json?: boolean; registry?: string }) => {
       try {
         const full = fullName(name);
         const dir = installedPluginsDir();
-        execSync(`npm update ${full} --prefix "${dir}" --legacy-peer-deps`, { stdio: "inherit" });
+        const registryFlag = opts.registry ? ` --registry=${opts.registry}` : "";
+        execSync(`npm update ${full} --prefix "${dir}" --legacy-peer-deps${registryFlag}`, { stdio: "inherit" });
         if (opts.json) jsonOut({ upgraded: full });
         else console.log(`✓ ${full} 已升级`);
       } catch (e: any) {

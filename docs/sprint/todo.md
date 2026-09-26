@@ -14,6 +14,7 @@
 | 4 | [全局安装时 postinstall 输出被 npm 吞掉](#4-bug-全局安装时-postinstall-输出被-npm-吞掉应显示出来) | Bug | 🟢 低 | [ ] |
 | 5 | [未登录时 AI 主动交互登录并续跑原任务](#5-优化未登录时-ai-主动发起交互式登录并续跑原任务) | 体验 | 🟢 低 | [ ] |
 | 6 | [网关内置飞书 App Secret（硬编码）——生产前改为密钥注入](#6-安全债网关内置飞书-app-secret硬编码生产前必须改为密钥注入) | 安全/技术债 | 🟡 中 | [ ] |
+| 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 
 **已完成**：[跳转](#已完成)
 
@@ -165,6 +166,35 @@
 - [ ] 启动摘要日志继续只打印 App ID，不得打印 Secret（现状已满足）
 
 **验收标准**：仓库任何文件与 git 历史的新增提交中不再出现明文 App Secret；干净环境按文档通过环境变量注入即可完成 SSO 登录。
+
+---
+
+## [ ] 7. [BUG] npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器
+
+**提出时间**：2026-09-26
+**优先级**：🟡 中
+**类型**：Bug（发布流程干扰）
+**现象**：执行 `npm publish --workspace=packages/cli` 时，`prepublishOnly` 运行 `npm test`（vitest），测试中 `ensureToken()` 无缓存 token → 走默认 `exchange` 认证 → `ExchangeProvider.login()` 在 `127.0.0.1:3000` 启动 loopback 回调服务器 → `openBrowser(authUrl)` 弹浏览器访问 mock 的飞书授权地址 `http://127.0.0.1:3000/callback?code=C1&state=WRONG`。
+
+**根因链路**：
+```
+npm publish → prepublishOnly: "npm run build && npm test"
+  → vitest run → run.test.ts / script.test.ts / auth-login.test.ts
+    → ensureToken(config) → 无缓存 token
+      → config.auth.type === "exchange"（默认值）
+        → ExchangeProvider.login()
+          → startCallbackServer({ port: 3000 })
+          → openBrowser(authUrl)  ← 🔴 弹两轮浏览器
+```
+
+**为什么没有自动阻断发布**：测试中 7 个失败、导致 vitest 非零退出码，若 prepublishOnly 完全依赖 `npm test` 的退出码则本应被阻断——但浏览器弹窗本身就干扰了用户体验。
+
+**修复方向**：
+- 那三个测试文件（run.test.ts / script.test.ts / auth-login.test.ts）的 `beforeEach` 需临时设 `process.env.SAICMOTOR_AUTH_TYPE = "password"`，`afterEach` 恢复 `delete process.env.SAICMOTOR_AUTH_TYPE`，让测试走 password 协议不弹浏览器
+- 注意 S5 已将默认改为 exchange（飞书 OAuth），这是正确的默认值，**发布流程不应该改回去**——只应让测试环境走 password mock
+- 发布流程绕过方案：`prepublishOnly` 脚本加 `SAICMOTOR_AUTH_TYPE=password npm test` 临时覆盖（但常规还是要修测试）
+
+**验收标准**：`npm publish --workspace=packages/cli` 全流程无浏览器弹窗，发布成功。
 
 ---
 

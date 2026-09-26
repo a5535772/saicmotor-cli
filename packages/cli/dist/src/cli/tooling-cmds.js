@@ -59,7 +59,7 @@ function createPlugin(name) {
     // saicmotor.plugin.json
     node_fs_1.default.writeFileSync(node_path_1.default.join(dir, "saicmotor.plugin.json"), JSON.stringify({
         name: pkgName,
-        engine: "^1.0.0",
+        engine: "^0.8.0",
         catalog: ["catalog/services/*.json"],
         skills: [`skills/saicmotor-${name}`],
         scripts: "scripts",

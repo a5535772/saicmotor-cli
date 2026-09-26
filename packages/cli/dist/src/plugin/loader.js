@@ -11,7 +11,7 @@ const sdk_1 = require("@saicmotor/sdk");
 const catalog_1 = require("../schema/catalog");
 const paths_1 = require("./paths");
 const state_1 = require("./state");
-const CORE_VERSION = "1.0.0";
+const CORE_VERSION = "0.8.0";
 /**
  * 双根扫描并加载所有兼容插件。
  * 不做全局副作用（不写 state，不注册 skills）。
