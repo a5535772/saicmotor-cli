@@ -5,15 +5,26 @@ import { PluginManifestSchema } from "@saicmotor/sdk";
 import { linkedPluginsDir } from "../plugin/paths";
 import { loadState, saveState } from "../plugin/state";
 
-/** create plugin <name>——生成标准插件工程骨架 */
-function createPlugin(name: string): void {
-  const cwd = process.cwd();
+// ── 提取的命令逻辑（可测试，无 console 输出）──
+
+export interface CreatePluginResult {
+  ok: boolean;
+  error?: string;
+  data?: { dir: string; pkgName: string };
+}
+
+/**
+ * 生成标准插件工程骨架。
+ * @param name 插件短名（如 "reimbursement"）
+ * @param outputDir 输出到哪个目录（默认 cwd）
+ */
+export function createPluginLogic(name: string, outputDir?: string): CreatePluginResult {
+  const cwd = outputDir ?? process.cwd();
   const pkgName = `@saicmotor/plugin-${name}`;
   const dir = path.join(cwd, `plugin-${name}`);
 
   if (fs.existsSync(dir)) {
-    console.error(`✗ 目录已存在: ${dir}`);
-    process.exit(1);
+    return { ok: false, error: `目录已存在: ${dir}` };
   }
 
   fs.mkdirSync(dir, { recursive: true });
@@ -132,53 +143,59 @@ function createPlugin(name: string): void {
     "只在纯声明式 catalog 无法满足时才在此目录写脚本。\n详见 https://内部文档地址/plugin-scripts\n",
   );
 
-  console.log(`✓ 插件工程已生成: ${dir}`);
-  console.log(`  cd plugin-${name}`);
-  console.log(`  npm install`);
-  console.log(`  编辑 catalog/services/${name}.json 声明服务`);
-  console.log(`  npx @saicmotor/cli@latest dev  # 本地联调`);
+  return { ok: true, data: { dir, pkgName } };
 }
 
-/** validate .——校验当前目录的插件 manifest + catalog */
-function validatePlugin(dir: string): boolean {
+export interface ValidatePluginResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * 校验插件目录的 manifest。
+ */
+export function validatePluginLogic(dir: string): ValidatePluginResult {
   const manifestPath = path.join(dir, "saicmotor.plugin.json");
   if (!fs.existsSync(manifestPath)) {
-    console.error(`✗ 未找到 saicmotor.plugin.json: ${dir}`);
-    return false;
+    return { ok: false, error: `未找到 saicmotor.plugin.json: ${dir}` };
   }
 
   let manifest: unknown;
   try {
     manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   } catch {
-    console.error(`✗ manifest JSON 解析失败: ${manifestPath}`);
-    return false;
+    return { ok: false, error: `manifest JSON 解析失败: ${manifestPath}` };
   }
 
   try {
     PluginManifestSchema.parse(manifest);
-    console.log("✓ manifest 校验通过");
   } catch (e: any) {
-    console.error(`✗ manifest 校验失败: ${e.message}`);
-    return false;
+    return { ok: false, error: `manifest 校验失败: ${e.message}` };
   }
 
-  // TODO: 后续迭代添加 catalog zod 校验
-  console.log("✓ 插件校验通过");
-  return true;
+  return { ok: true };
 }
 
-/** dev——将当前目录 link 到 ~/.saicmotor/plugins/linked/ */
-function devPlugin(dir: string, stop: boolean): void {
+export interface DevPluginResult {
+  ok: boolean;
+  error?: string;
+  data?: { target: string; shortName: string; action: "link" | "unlink" };
+}
+
+/**
+ * dev link/unlink 核心逻辑。
+ * @param dir 插件工程目录
+ * @param stop true 解除 dev link
+ */
+export function devPluginLogic(dir: string, stop: boolean): DevPluginResult {
   const manifestPath = path.join(dir, "saicmotor.plugin.json");
   if (!fs.existsSync(manifestPath)) {
-    console.error(`✗ 未找到 saicmotor.plugin.json，请在插件工程根目录运行`);
-    process.exit(1);
+    return { ok: false, error: "未找到 saicmotor.plugin.json，请在插件工程根目录运行" };
   }
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   const name = manifest.name;
-  const shortName = name.replace("@saicmotor/", ""); // plugin-user
+  const shortName = name.replace("@saicmotor/", "");
   const target = path.join(linkedPluginsDir(), shortName);
 
   if (stop) {
@@ -187,14 +204,11 @@ function devPlugin(dir: string, stop: boolean): void {
       const state = loadState();
       delete state.plugins[name];
       saveState(state);
-      console.log(`✓ dev link 已解除: ${target}`);
-    } else {
-      console.log(`（无活跃 dev link）`);
+      return { ok: true, data: { target, shortName, action: "unlink" } };
     }
-    return;
+    return { ok: true, data: { target, shortName, action: "unlink" } };
   }
 
-  // 建立 junction
   if (!fs.existsSync(linkedPluginsDir())) {
     fs.mkdirSync(linkedPluginsDir(), { recursive: true });
   }
@@ -203,7 +217,6 @@ function devPlugin(dir: string, stop: boolean): void {
   }
   fs.symlinkSync(path.resolve(dir), target, "junction");
 
-  // 写 state
   const state = loadState();
   state.plugins[name] = {
     name,
@@ -215,10 +228,10 @@ function devPlugin(dir: string, stop: boolean): void {
   };
   saveState(state);
 
-  console.log(`✓ dev link 已建立: ${target} → ${path.resolve(dir)}`);
-  console.log(`  全局/npx CLI 已加载该插件`);
-  console.log(`  解除: saicmotor dev --stop`);
+  return { ok: true, data: { target, shortName, action: "link" } };
 }
+
+// ── Commander 注册（薄壳：调提取函数 + 格式化输出）──
 
 export function registerToolingCommands(program: Command): void {
   // create plugin <name>
@@ -226,15 +239,33 @@ export function registerToolingCommands(program: Command): void {
   createCmd
     .command("plugin <name>")
     .description("生成标准插件工程骨架")
-    .action((name: string) => createPlugin(name));
+    .action((name: string) => {
+      const result = createPluginLogic(name);
+      if (result.ok && result.data) {
+        console.log(`✓ 插件工程已生成: ${result.data.dir}`);
+        console.log(`  cd plugin-${name}`);
+        console.log(`  npm install`);
+        console.log(`  编辑 catalog/services/${name}.json 声明服务`);
+        console.log(`  npx @saicmotor/cli@latest dev  # 本地联调`);
+      } else {
+        console.error(`✗ ${result.error}`);
+        process.exit(1);
+      }
+    });
 
   // validate <dir>
   program
     .command("validate <dir>")
     .description("校验插件 manifest 与 catalog")
     .action((dir: string) => {
-      const ok = validatePlugin(dir);
-      if (!ok) process.exit(1);
+      const result = validatePluginLogic(dir);
+      if (result.ok) {
+        console.log("✓ manifest 校验通过");
+        console.log("✓ 插件校验通过");
+      } else {
+        console.error(`✗ ${result.error}`);
+        process.exit(1);
+      }
     });
 
   // dev
@@ -243,6 +274,18 @@ export function registerToolingCommands(program: Command): void {
     .description("将当前目录 link 为开发插件")
     .option("--stop", "解除 dev link")
     .action((opts: { stop?: boolean }) => {
-      devPlugin(process.cwd(), !!opts.stop);
+      const result = devPluginLogic(process.cwd(), !!opts.stop);
+      if (!result.ok) {
+        console.error(`✗ ${result.error}`);
+        process.exit(1);
+      }
+      if (result.data?.action === "unlink") {
+        // unlink 成功时 target 已被逻辑层删除，此处仅打印
+        console.log(`✓ dev link 已解除: ${result.data.target}`);
+      } else if (result.data?.action === "link") {
+        console.log(`✓ dev link 已建立: ${result.data.target} → ${path.resolve(process.cwd())}`);
+        console.log(`  全局/npx CLI 已加载该插件`);
+        console.log(`  解除: saicmotor dev --stop`);
+      }
     });
 }
