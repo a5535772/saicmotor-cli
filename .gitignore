@@ -1,12 +1,12 @@
 # Dependencies
 node_modules/
 
-# Build output (dist/ is committed — see docs/lessons-learned-the-hard-way/)
+# Build output
+dist/
+*.tsbuildinfo
 
 # App runtime data
 .saicmotor/
-
-# Environment files
 .env
 .env.*
 !.env.example
@@ -42,9 +42,6 @@ coverage/
 
 # Vitest cache (workspace-local)
 packages/.vitest-cache/
-
-# TypeScript incremental build
-*.tsbuildinfo
 
 # Optional npm cache
 .npm
