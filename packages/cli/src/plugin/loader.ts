@@ -22,7 +22,7 @@ export interface LoadResult {
   warnings: string[];
 }
 
-const CORE_VERSION = "1.0.0";
+const CORE_VERSION = "0.8.0";
 
 /**
  * 双根扫描并加载所有兼容插件。

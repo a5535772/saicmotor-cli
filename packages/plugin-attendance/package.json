@@ -1,9 +1,10 @@
 {
   "name": "@saicmotor/plugin-attendance",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "description": "saicmotor 考勤打卡插件",
   "type": "commonjs",
   "files": [
+    "README.md",
     "dist/**/*.js",
     "skills/**/*.md",
     "catalog/**/*.json",

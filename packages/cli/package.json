@@ -1,12 +1,13 @@
 {
   "name": "@saicmotor/cli",
-  "version": "1.0.0",
+  "version": "0.8.0",
   "description": "面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行",
   "type": "commonjs",
   "bin": {
     "saicmotor": "scripts/run.js"
   },
   "files": [
+    "README.md",
     "dist/src/**/*.js",
     "dist/scripts/**/*.js",
     "skills/**/*.md",

@@ -13,7 +13,7 @@ const tooling_cmds_1 = require("./tooling-cmds");
 const error_1 = require("./error");
 const skills_1 = require("../install/skills");
 const program = new commander_1.Command();
-program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.4.0");
+program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("1.0.0");
 const config = (0, config_1.loadConfig)();
 // 加载核心 catalog + 插件 catalog
 const coreServices = (0, catalog_1.loadCatalog)();

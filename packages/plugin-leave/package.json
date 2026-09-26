@@ -1,9 +1,10 @@
 {
   "name": "@saicmotor/plugin-leave",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "description": "saicmotor 请假流程插件",
   "type": "commonjs",
   "files": [
+    "README.md",
     "dist/**/*.js",
     "skills/**/*.md",
     "catalog/**/*.json",

@@ -70,7 +70,7 @@ function createPlugin(name: string): void {
     JSON.stringify(
       {
         name: pkgName,
-        engine: "^1.0.0",
+        engine: "^0.8.0",
         catalog: ["catalog/services/*.json"],
         skills: [`skills/saicmotor-${name}`],
         scripts: "scripts",

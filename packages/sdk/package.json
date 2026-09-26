@@ -1,11 +1,11 @@
 {
   "name": "@saicmotor/sdk",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "description": "saicmotor 插件开发 SDK：类型、schema、测试 helper",
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist/**/*.js", "dist/**/*.d.ts"],
+  "files": ["README.md", "dist/**/*.js", "dist/**/*.d.ts"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",

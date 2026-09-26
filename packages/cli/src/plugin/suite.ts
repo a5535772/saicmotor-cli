@@ -24,7 +24,7 @@ export function generateSuiteSkill(routes: Record<string, string>): string {
   return [
     "---",
     "name: saicmotor-suite",
-    "version: 1.0.0",
+    "version: 0.8.0",
     'description: "saicmotor 统一入口 skill——AI Agent 通过此 skill 发现并路由到具体业务能力"',
     "metadata:",
     "  requires:",
