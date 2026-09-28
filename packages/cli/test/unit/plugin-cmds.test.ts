@@ -323,15 +323,22 @@ describe("uninstallPluginLogic", () => {
 
 describe("upgradePluginLogic", () => {
   const origHome = process.env.SAICMOTOR_HOME;
+  const origDirs: Record<string, string> = { ...AI_CLIENT_SKILL_DIRS };
   let tmpBase: string;
 
   beforeEach(() => {
     tmpBase = path.join(os.tmpdir(), `saicmotor-test-upgrade-${Date.now()}`);
     process.env.SAICMOTOR_HOME = tmpBase;
+    const tmpClient = path.join(os.tmpdir(), `saicmotor-test-client-${Date.now()}`);
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      AI_CLIENT_SKILL_DIRS[k] = path.join(tmpClient, k, "skills");
+    }
     execSyncMock.mockReset();
+    vi.mocked(registrar.writeSuiteRoutes).mockClear();
   });
 
   afterEach(() => {
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
     if (fs.existsSync(tmpBase)) fs.rmSync(tmpBase, { recursive: true });
     if (origHome === undefined) delete process.env.SAICMOTOR_HOME;
     else process.env.SAICMOTOR_HOME = origHome;
@@ -342,6 +349,48 @@ describe("upgradePluginLogic", () => {
     const result = upgradePluginLogic("leave", { registry: "http://localhost:4873" });
     expect(result.ok).toBe(true);
     expect(result.data!.name).toBe("@saicmotor/plugin-leave");
+  });
+
+  it("syncs version into state after upgrade", () => {
+    // 升级后只回写 version（list 需显示新版本），不重建 skill 集
+    const pkgDir = path.join(installedPluginsDir(), "@saicmotor", "plugin-leave");
+    execSyncMock.mockImplementation(() => {
+      setupPluginFiles(pkgDir, ["skills/saicmotor-leave"]);
+      fs.writeFileSync(
+        path.join(pkgDir, "saicmotor.plugin.json"),
+        JSON.stringify({
+          name: "@saicmotor/plugin-leave",
+          engine: "^0.8.0",
+          skills: ["skills/saicmotor-leave"],
+          routes: { 请假: "saicmotor-leave" },
+        }),
+      );
+      fs.writeFileSync(
+        path.join(pkgDir, "package.json"),
+        JSON.stringify({ name: "@saicmotor/plugin-leave", version: "0.9.0" }),
+      );
+      return "";
+    });
+
+    const before = loadState();
+    before.plugins["@saicmotor/plugin-leave"] = {
+      name: "@saicmotor/plugin-leave",
+      version: "0.8.0",
+      enabled: true,
+      source: "registry",
+      skills: ["skills/saicmotor-leave"],
+    };
+    saveState(before);
+
+    const result = upgradePluginLogic("leave", { registry: "http://localhost:4873" });
+    expect(result.ok).toBe(true);
+
+    const after = loadState();
+    const entry = after.plugins["@saicmotor/plugin-leave"];
+    expect(entry.version).toBe("0.9.0");
+    // skills 不以 upgrade 为准：skill 增删走 uninstall → install
+    expect(entry.skills).toEqual(["skills/saicmotor-leave"]);
+    expect(vi.mocked(registrar.writeSuiteRoutes)).toHaveBeenCalledTimes(1);
   });
 
   it("returns error when npm update fails", () => {

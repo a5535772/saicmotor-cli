@@ -145,10 +145,6 @@ export interface PluginToggleResult {
   data?: { name: string; enabled: boolean };
 }
 
-/**
- * 插件启用/禁用核心逻辑。
- * 只切换 state，不操作 skills 或 suite。
- */
 /** 解析插件包根目录（linked 用工程路径，registry 用 node_modules 下路径） */
 function pluginRootOf(entry: {
   source: string;
@@ -159,6 +155,10 @@ function pluginRootOf(entry: {
   return path.join(installedPluginsDir(), entry.name);
 }
 
+/**
+ * 插件启用/禁用核心逻辑。
+ * 启用/禁用直接改变有效插件集合，会同步 skills 可见性与 suite 路由。
+ */
 export function setPluginEnabledLogic(
   name: string,
   enabled: boolean,
@@ -191,7 +191,8 @@ export interface PluginUpgradeResult {
 
 /**
  * 插件升级核心逻辑。
- * 执行 npm update。
+ * 执行 npm update，随后重新注册 skills（幂等 add-only）、同步 version、刷新 suite。
+ * 注意：升级若增删了 skills，请先 uninstall 再 install，勿依赖 upgrade 重建 skill 集。
  */
 export function upgradePluginLogic(
   name: string,
@@ -209,7 +210,7 @@ export function upgradePluginLogic(
     return { ok: false, error: e.message };
   }
 
-  // 升级可能改变 manifest 的 skills/routes，重新同步派生产物
+  // 幂等重注册 skills（更改的 skill 靠跳过，不改动既有 junction）
   const pkgDir = path.join(installedPluginsDir(), full);
   const manifestPath = path.join(pkgDir, "saicmotor.plugin.json");
   if (fs.existsSync(manifestPath)) {
@@ -220,6 +221,21 @@ export function upgradePluginLogic(
       // manifest 读失败不阻断升级结果
     }
   }
+
+  // 回写新的 version 到 state，避免升级后 list 仍显示旧版本
+  const state = loadState();
+  const entry = state.plugins[full];
+  const pkgJsonPath = path.join(pkgDir, "package.json");
+  if (entry && fs.existsSync(pkgJsonPath)) {
+    try {
+      const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
+      entry.version = pkgJson.version ?? entry.version;
+      saveState(state);
+    } catch {
+      // version 读取失败保留原值
+    }
+  }
+
   registrar.writeSuiteRoutes();
 
   return { ok: true, data: { name: full } };
