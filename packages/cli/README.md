@@ -4,7 +4,7 @@
 
 ## 架构
 
-> 当前 0.8.0 已支持插件加载、生命周期管理、开发者工具链。详见 [ARCHITECTURE.md](../../docs/ARCHITECTURE.md)。
+> 当前 0.8.0 已支持插件加载、生命周期管理、开发者工具链。详见 [ARCHITECTURE.2.0.md](../../docs/history/ARCHITECTURE.2.0.md)（待重写）。
 
 ## 快速开始
 

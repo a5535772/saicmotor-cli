@@ -143,7 +143,7 @@ saicmotor-cli/
 │   └── helpers/server.ts     # Mock HTTP 服务器
 │
 ├── docs/                     ← 文档
-│   ├── ARCHITECTURE.md       # 架构设计
+│   ├── history/               # 归档文档（旧版架构）
 │   ├── sprint/               # Sprint 进度
 │   ├── superpowers/          # 设计文档
 │   └── lessons-learned-the-hard-way/  # 踩坑记录
@@ -417,7 +417,7 @@ echo '{"auth":{"type":"password"}}' > ~/.saicmotor/config.json
 
 ## 9. 相关文档
 
-- [架构设计](../docs/ARCHITECTURE.md) — 完整架构说明
+- [架构设计（归档）](../docs/history/ARCHITECTURE.2.0.md) — 完整架构说明
 - [安装指南](INSTALL.md) — 给用户看的安装文档
 - [Sprint 进度](../docs/sprint/总览.md) — 迭代计划
 - [踩坑记录](../docs/lessons-learned-the-hard-way/) — 已知问题与历史教训

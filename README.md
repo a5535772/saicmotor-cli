@@ -87,7 +87,7 @@ saicmotor leave applications submit --start-date 2026-09-21 --reason 年假 --ye
 - 所有 HTTP 请求经网关（`saicmotor.config.json → defaults.gateway`，默认 `http://localhost:8081`）
 - 脚本覆盖：`scripts/` 下有同名 TS 文件就走脚本，否则 HTTP 直接回放
 
-→ 完整架构：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+→ 完整架构（归档待重写）：[docs/history/ARCHITECTURE.2.0.md](docs/history/ARCHITECTURE.2.0.md)
 
 ---
 

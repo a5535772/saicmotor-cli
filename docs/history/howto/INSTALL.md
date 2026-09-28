@@ -294,8 +294,8 @@ saicmotor auth login --username <工号> --password <密码>
 
 ## 相关链接
 
-- [架构设计](../docs/ARCHITECTURE.md)
-- [安装分发机制](../docs/ARCHITECTURE.md#11-安装与分发)
-- [配置化说明](../docs/ARCHITECTURE.md#12-配置化)
+- [架构设计（归档）](../docs/history/ARCHITECTURE.2.0.md)
+- [安装分发机制（归档）](../docs/history/ARCHITECTURE.md#11-安装与分发)
+- [配置化说明（归档）](../docs/history/ARCHITECTURE.md#12-配置化)
 - [GitHub 仓库](https://github.com/a5535772/saicmotor-cli)
 - [Sprint 进度](../docs/sprint/总览.md)
