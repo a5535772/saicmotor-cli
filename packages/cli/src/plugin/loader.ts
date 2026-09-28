@@ -20,7 +20,9 @@ function scanEntries(root: string): Array<[string, string]> {
   catch { return result; }
 
   for (const e of entries) {
-    if (!e.isDirectory()) continue;
+    // dev link 用 junction/symlink 建立，Windows 下 isDirectory() 为 false，
+    // 必须同时接受 symlink 否则 linked 插件会被跳过。
+    if (!e.isDirectory() && !e.isSymbolicLink()) continue;
     if (e.name.startsWith("plugin-")) {
       // linked/ 直接即是插件目录
       result.push([e.name, path.join(root, e.name)]);
@@ -31,7 +33,7 @@ function scanEntries(root: string): Array<[string, string]> {
       try { scopeEntries = fs.readdirSync(scopeDir, { withFileTypes: true }); }
       catch { continue; }
       for (const se of scopeEntries) {
-        if (se.isDirectory() && se.name.startsWith("plugin-")) {
+        if ((se.isDirectory() || se.isSymbolicLink()) && se.name.startsWith("plugin-")) {
           result.push([se.name, path.join(scopeDir, se.name)]);
         }
       }

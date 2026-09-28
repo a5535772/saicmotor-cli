@@ -153,6 +153,39 @@ describe("plugin loader", () => {
     expect(result.plugins[0].entry.source).toBe("linked");
   });
 
+  it("loads linked plugins created as junction/symlink (dev link)", () => {
+    // `dev` 用 fs.symlinkSync(..., "junction") 建链：Windows 下 junction 被
+    // readdirSync(withFileTypes) 报告为 symlink 而非 directory，必须能加载。
+    const realDir = path.join(tmpBase, "real-plugin-reimbursement");
+    fs.mkdirSync(path.join(realDir, "catalog", "services"), { recursive: true });
+    fs.writeFileSync(
+      path.join(realDir, "saicmotor.plugin.json"),
+      JSON.stringify({
+        name: "@saicmotor/plugin-reimbursement",
+        engine: ">=0.4.0",
+        catalog: ["catalog/services/*.json"],
+      }),
+    );
+    fs.writeFileSync(
+      path.join(realDir, "catalog", "services", "reimb.json"),
+      JSON.stringify({ name: "reimb", servicePath: "/api/reimb", resources: {} }),
+    );
+
+    const linkedDir = path.join(tmpBase, "plugins", "linked");
+    fs.mkdirSync(linkedDir, { recursive: true });
+    fs.symlinkSync(
+      realDir,
+      path.join(linkedDir, "plugin-reimbursement"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+
+    const result = loadPlugins(makeTestConfig());
+    expect(result.plugins).toHaveLength(1);
+    expect(result.plugins[0].manifest.name).toBe("@saicmotor/plugin-reimbursement");
+    expect(result.plugins[0].entry.source).toBe("linked");
+    expect(result.plugins[0].services).toHaveLength(1);
+  });
+
   it("linked plugins override installed plugins with same name (linked wins)", () => {
     // Setup installed version
     setupPluginDir(
