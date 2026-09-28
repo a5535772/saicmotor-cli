@@ -86,6 +86,8 @@ export function createPluginLogic(name: string, outputDir?: string): CreatePlugi
         catalog: ["catalog/services/*.json"],
         skills: [`skills/saicmotor-${name}`],
         scripts: "scripts",
+        // 示例意图路由：短名 → 本插件 skill，让插件一出厂就能进入 suite 路由表
+        routes: { [name]: `saicmotor-${name}` },
       },
       null,
       2,

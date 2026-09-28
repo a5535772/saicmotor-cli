@@ -85,6 +85,8 @@ describe("createPluginLogic", () => {
     expect(manifest.engine).toBe("^0.8.0");
     expect(manifest.catalog).toEqual(["catalog/services/*.json"]);
     expect(manifest.skills).toEqual(["skills/saicmotor-reimbursement"]);
+    expect(manifest.scripts).toBe("scripts");
+    expect(manifest.routes).toEqual({ reimbursement: "saicmotor-reimbursement" });
   });
 
   it("generates skill SKILL.md with name and description", () => {
