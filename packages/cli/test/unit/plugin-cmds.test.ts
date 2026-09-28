@@ -9,6 +9,13 @@ vi.mock("node:child_process", () => ({
   execSync: execSyncMock,
 }));
 
+// 阻止 writeSuiteRoutes 写入真实的 tracked suite 文件（skills/saicmotor-suite/SKILL.md），
+// 其余 registrar 行为保持真实，便于测试 skills 注册/注销的副作用。
+vi.mock("../../src/plugin/registrar", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/plugin/registrar")>();
+  return { ...actual, writeSuiteRoutes: vi.fn() };
+});
+
 import {
   fullName,
   jsonOut,
@@ -19,7 +26,9 @@ import {
   upgradePluginLogic,
 } from "../../src/cli/plugin-cmds";
 import { loadState, saveState } from "../../src/plugin/state";
+import { installedPluginsDir } from "../../src/plugin/paths";
 import { AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
+import * as registrar from "../../src/plugin/registrar";
 
 // ── 辅助函数 ──
 
@@ -84,11 +93,19 @@ describe("jsonErr", () => {
 
 describe("setPluginEnabledLogic", () => {
   const origHome = process.env.SAICMOTOR_HOME;
+  const origDirs: Record<string, string> = { ...AI_CLIENT_SKILL_DIRS };
   let tmpBase: string;
+  let tmpClient: string;
 
   beforeEach(() => {
     tmpBase = path.join(os.tmpdir(), `saicmotor-test-toggle-${Date.now()}`);
+    tmpClient = path.join(os.tmpdir(), `saicmotor-test-client-${Date.now()}`);
     process.env.SAICMOTOR_HOME = tmpBase;
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      AI_CLIENT_SKILL_DIRS[k] = path.join(tmpClient, k, "skills");
+    }
+    vi.mocked(registrar.writeSuiteRoutes).mockClear();
+
     const state = loadState();
     state.plugins["@saicmotor/plugin-leave"] = {
       name: "@saicmotor/plugin-leave",
@@ -101,7 +118,9 @@ describe("setPluginEnabledLogic", () => {
   });
 
   afterEach(() => {
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
     if (fs.existsSync(tmpBase)) fs.rmSync(tmpBase, { recursive: true });
+    if (fs.existsSync(tmpClient)) fs.rmSync(tmpClient, { recursive: true });
     if (origHome === undefined) delete process.env.SAICMOTOR_HOME;
     else process.env.SAICMOTOR_HOME = origHome;
   });
@@ -123,6 +142,29 @@ describe("setPluginEnabledLogic", () => {
 
     const state = loadState();
     expect(state.plugins["@saicmotor/plugin-leave"].enabled).toBe(true);
+  });
+
+  it("disable unregisters skills, enable re-registers them, both refresh suite", () => {
+    // 造一个真实插件目录，使 enable 能注册出 skill junction
+    const pkgDir = path.join(installedPluginsDir(), "@saicmotor", "plugin-leave");
+    fs.mkdirSync(path.join(pkgDir, "skills", "saicmotor-leave"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "skills", "saicmotor-leave", "SKILL.md"), "# leave\n", "utf8");
+
+    // 禁用 → skill 从各 AI 客户端注销
+    setPluginEnabledLogic("leave", false);
+    for (const dir of Object.values(AI_CLIENT_SKILL_DIRS)) {
+      expect(fs.existsSync(path.join(dir, "saicmotor-leave"))).toBe(false);
+    }
+
+    // 启用 → skill 重新注册
+    setPluginEnabledLogic("leave", true);
+    const anyExists = Object.values(AI_CLIENT_SKILL_DIRS).some((dir) =>
+      fs.existsSync(path.join(dir, "saicmotor-leave", "SKILL.md")),
+    );
+    expect(anyExists).toBe(true);
+
+    // 两次操作都应触发 suite 刷新
+    expect(vi.mocked(registrar.writeSuiteRoutes)).toHaveBeenCalledTimes(2);
   });
 
   it("returns error for unknown plugin", () => {

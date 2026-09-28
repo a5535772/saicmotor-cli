@@ -72,7 +72,26 @@ export function unregisterSkill(skillName: string): void {
 }
 
 /**
- * 注册插件的全部 skills。
+ * 重写 saicmotor-suite 的 SKILL.md 并注册到各 AI 客户端。
+ * 这是「派生产物同步」中 suite 的唯一切入点：任何改变有效插件集合的操作
+ * 完成后都应调用它，使 suite 始终反映当前有效插件的 routes。
+ * @param suiteDir 可选，测试时注入临时目录；默认写回 CLI 包内 skills/saicmotor-suite。
+ */
+export function writeSuiteRoutes(suiteDir?: string): void {
+  try {
+    const routes = buildSuiteRoutes();
+    const md = generateSuiteSkill(routes);
+    const targetDir = suiteDir ?? path.join(findPackageRoot(), "skills", "saicmotor-suite");
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(path.join(targetDir, "SKILL.md"), md, "utf8");
+    registerSkill(targetDir, "saicmotor-suite");
+  } catch (e: any) {
+    console.error(`[saicmotor] suite 路由刷新失败: ${e.message}`);
+  }
+}
+
+/**
+ * 注册插件的全部 skills（只注册 skills，不刷新 suite）。
  * 返回每个 skill 在每个客户端的注册结果。
  */
 export function registerPluginSkills(pkgRoot: string, skillDirs: string[]): Record<string, SkillRegResult[]> {
@@ -88,20 +107,6 @@ export function registerPluginSkills(pkgRoot: string, skillDirs: string[]): Reco
     if (!fs.existsSync(skillMdPath)) continue;
 
     allResults[skillName] = registerSkill(skillDir, skillName);
-  }
-
-  // 刷新 suite（基于所有已装插件的 routes 动态生成）
-  try {
-    const routes = buildSuiteRoutes();
-    const suiteMd = generateSuiteSkill(routes);
-    const suiteDir = path.join(findPackageRoot(), "skills", "saicmotor-suite");
-    if (!fs.existsSync(suiteDir)) fs.mkdirSync(suiteDir, { recursive: true });
-    fs.writeFileSync(path.join(suiteDir, "SKILL.md"), suiteMd, "utf8");
-    // 同时注册到 AI 客户端
-    registerSkill(suiteDir, "saicmotor-suite");
-  } catch (e: any) {
-    // suite 生成失败不阻断 skills 注册
-    console.error(`[saicmotor] suite 路由刷新失败: ${e.message}`);
   }
 
   return allResults;

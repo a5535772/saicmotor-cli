@@ -6,13 +6,7 @@ import { loadState, saveState } from "../plugin/state";
 import { installedPluginsDir, pluginsDir } from "../plugin/paths";
 import { loadPlugins } from "../plugin/loader";
 import { loadConfig } from "../config";
-import {
-  registerPluginSkills,
-  unregisterPluginSkills,
-  registerSkill,
-} from "../plugin/registrar";
-import { buildSuiteRoutes, generateSuiteSkill } from "../plugin/suite";
-import { findPackageRoot } from "../pkg-root";
+import * as registrar from "../plugin/registrar";
 
 // ── 工具函数 ──
 
@@ -31,20 +25,6 @@ export function fullName(input: string): string {
   if (input.startsWith("@saicmotor/plugin-")) return input;
   if (input.startsWith("plugin-")) return `@saicmotor/${input}`;
   return `@saicmotor/plugin-${input}`;
-}
-
-/** 刷新 suite 文件并重新注册 */
-export function refreshSuite(): void {
-  try {
-    const routes = buildSuiteRoutes();
-    const md = generateSuiteSkill(routes);
-    const suiteDir = path.join(findPackageRoot(), "skills", "saicmotor-suite");
-    if (!fs.existsSync(suiteDir)) fs.mkdirSync(suiteDir, { recursive: true });
-    fs.writeFileSync(path.join(suiteDir, "SKILL.md"), md, "utf8");
-    registerSkill(suiteDir, "saicmotor-suite");
-  } catch (e: any) {
-    console.error(`[saicmotor] suite 路由刷新失败: ${e.message}`);
-  }
 }
 
 // ── 提取的命令逻辑（可测试，无 console 输出）──
@@ -95,7 +75,7 @@ export function installPluginLogic(
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   const skillDirs: string[] = manifest.skills ?? [];
 
-  const skillResults = registerPluginSkills(pkgDir, skillDirs);
+  const skillResults = registrar.registerPluginSkills(pkgDir, skillDirs);
 
   const state = loadState();
   const pkgJson = JSON.parse(
@@ -111,7 +91,7 @@ export function installPluginLogic(
   };
   saveState(state);
 
-  refreshSuite();
+  registrar.writeSuiteRoutes();
 
   return {
     ok: true,
@@ -141,7 +121,7 @@ export function uninstallPluginLogic(name: string): PluginUninstallResult {
     return { ok: false, error: `未找到插件: ${full}` };
   }
 
-  unregisterPluginSkills(entry.skills ?? []);
+  registrar.unregisterPluginSkills(entry.skills ?? []);
 
   try {
     execSync(`npm uninstall ${full} --prefix "${pluginsDir()}"`, {
@@ -154,7 +134,7 @@ export function uninstallPluginLogic(name: string): PluginUninstallResult {
   delete state.plugins[full];
   saveState(state);
 
-  refreshSuite();
+  registrar.writeSuiteRoutes();
 
   return { ok: true, data: { name: full } };
 }
@@ -169,17 +149,37 @@ export interface PluginToggleResult {
  * 插件启用/禁用核心逻辑。
  * 只切换 state，不操作 skills 或 suite。
  */
+/** 解析插件包根目录（linked 用工程路径，registry 用 node_modules 下路径） */
+function pluginRootOf(entry: {
+  source: string;
+  linkedPath?: string;
+  name: string;
+}): string {
+  if (entry.source === "linked" && entry.linkedPath) return entry.linkedPath;
+  return path.join(installedPluginsDir(), entry.name);
+}
+
 export function setPluginEnabledLogic(
   name: string,
   enabled: boolean,
 ): PluginToggleResult {
   const full = fullName(name);
   const state = loadState();
-  if (!state.plugins[full]) {
+  const entry = state.plugins[full];
+  if (!entry) {
     return { ok: false, error: `未找到插件: ${full}` };
   }
-  state.plugins[full].enabled = enabled;
+  entry.enabled = enabled;
   saveState(state);
+
+  // 启用/禁用直接改变有效插件集合，需同步 skills 可见性与 suite 路由
+  if (enabled) {
+    registrar.registerPluginSkills(pluginRootOf(entry), entry.skills ?? []);
+  } else {
+    registrar.unregisterPluginSkills(entry.skills ?? []);
+  }
+  registrar.writeSuiteRoutes();
+
   return { ok: true, data: { name: full, enabled } };
 }
 
@@ -208,6 +208,20 @@ export function upgradePluginLogic(
   } catch (e: any) {
     return { ok: false, error: e.message };
   }
+
+  // 升级可能改变 manifest 的 skills/routes，重新同步派生产物
+  const pkgDir = path.join(installedPluginsDir(), full);
+  const manifestPath = path.join(pkgDir, "saicmotor.plugin.json");
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      registrar.registerPluginSkills(pkgDir, manifest.skills ?? []);
+    } catch {
+      // manifest 读失败不阻断升级结果
+    }
+  }
+  registrar.writeSuiteRoutes();
+
   return { ok: true, data: { name: full } };
 }
 

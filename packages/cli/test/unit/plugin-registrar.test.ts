@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { registerSkill, unregisterSkill, registerPluginSkills, unregisterPluginSkills, AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
+import { registerSkill, unregisterSkill, registerPluginSkills, unregisterPluginSkills, writeSuiteRoutes, AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
 import { loadState, saveState } from "../../src/plugin/state";
 
 const tmpSkill = path.join(os.tmpdir(), `saicmotor-test-skill-${Date.now()}`);
@@ -151,18 +151,56 @@ describe("registerPluginSkills", () => {
     expect(Object.keys(results)).toContain("saicmotor-skill-b");
   });
 
-  it("regenerates suite SKILL.md after registering skills", () => {
-    const pkgDir = path.join(tmpBase, "refresh-plugin");
+  it("registers plugin skills without touching suite", () => {
+    // 职责澄清：registerPluginSkills 只注册 skills，不再写 suite
+    const pkgDir = path.join(tmpBase, "no-suite-plugin");
     const skillDir = path.join(pkgDir, "skills", "saicmotor-test");
     fs.mkdirSync(skillDir, { recursive: true });
     fs.writeFileSync(path.join(skillDir, "SKILL.md"), "# Test\n", "utf8");
 
-    registerPluginSkills(pkgDir, ["skills/saicmotor-test"]);
+    const results = registerPluginSkills(pkgDir, ["skills/saicmotor-test"]);
+    expect(Object.keys(results)).toContain("saicmotor-test");
+  });
+});
 
-    // suite should have been written (it's in CLI's own skills dir, not plug into tmp)
-    // We check that registerPluginSkills doesn't throw and returns results
-    // Suite regeneration is tested separately in suite test
-    expect(true).toBe(true); // no crash = pass
+describe("writeSuiteRoutes", () => {
+  const origHome = process.env.SAICMOTOR_HOME;
+  let tmpBase: string;
+
+  beforeEach(() => {
+    tmpBase = path.join(os.tmpdir(), `saicmotor-test-suite-${Date.now()}`);
+    process.env.SAICMOTOR_HOME = tmpBase;
+    const tmpClient = path.join(os.tmpdir(), `saicmotor-test-client-${Date.now()}`);
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      AI_CLIENT_SKILL_DIRS[k] = path.join(tmpClient, k, "skills");
+    }
+  });
+
+  afterEach(() => {
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
+    if (fs.existsSync(tmpBase)) fs.rmSync(tmpBase, { recursive: true });
+    if (origHome === undefined) delete process.env.SAICMOTOR_HOME;
+    else process.env.SAICMOTOR_HOME = origHome;
+  });
+
+  it("writes aggregated routes into the target dir", () => {
+    // 造一个带 routes 的已装插件
+    const pkgDir = path.join(tmpBase, "plugins", "node_modules", "@saicmotor", "plugin-r");
+    fs.mkdirSync(pkgDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(pkgDir, "saicmotor.plugin.json"),
+      JSON.stringify({
+        name: "@saicmotor/plugin-r",
+        engine: "^0.8.0",
+        routes: { 报销: "saicmotor-reimbursement" },
+      }),
+    );
+
+    const suiteDir = path.join(tmpBase, "suite");
+    writeSuiteRoutes(suiteDir);
+
+    const md = fs.readFileSync(path.join(suiteDir, "SKILL.md"), "utf8");
+    expect(md).toContain("| 报销 | saicmotor-reimbursement |");
   });
 });
 

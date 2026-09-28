@@ -1,13 +1,22 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+
+// 阻止 writeSuiteRoutes 写入真实的 tracked suite 文件，其余 registrar 行为保持真实
+vi.mock("../../src/plugin/registrar", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/plugin/registrar")>();
+  return { ...actual, writeSuiteRoutes: vi.fn() };
+});
+
 import {
   createPluginLogic,
   validatePluginLogic,
   devPluginLogic,
 } from "../../src/cli/tooling-cmds";
 import { loadState } from "../../src/plugin/state";
+import { AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
+import * as registrar from "../../src/plugin/registrar";
 
 // ── 辅助 ──
 
@@ -168,12 +177,19 @@ describe("validatePluginLogic", () => {
 
 describe("devPluginLogic", () => {
   const origHome = process.env.SAICMOTOR_HOME;
+  const origDirs: Record<string, string> = { ...AI_CLIENT_SKILL_DIRS };
   let tmpBase: string;
   let tmpPluginDir: string;
 
   beforeEach(() => {
     tmpBase = path.join(os.tmpdir(), `saicmotor-test-dev-${Date.now()}`);
     process.env.SAICMOTOR_HOME = tmpBase;
+
+    const tmpClient = path.join(os.tmpdir(), `saicmotor-test-client-${Date.now()}`);
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      AI_CLIENT_SKILL_DIRS[k] = path.join(tmpClient, k, "skills");
+    }
+    vi.mocked(registrar.writeSuiteRoutes).mockClear();
 
     tmpPluginDir = tmpDir();
     fs.mkdirSync(tmpPluginDir, { recursive: true });
@@ -188,6 +204,7 @@ describe("devPluginLogic", () => {
   });
 
   afterEach(() => {
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
     if (fs.existsSync(tmpBase)) fs.rmSync(tmpBase, { recursive: true });
     if (fs.existsSync(tmpPluginDir)) fs.rmSync(tmpPluginDir, { recursive: true });
     if (origHome === undefined) delete process.env.SAICMOTOR_HOME;
@@ -234,6 +251,26 @@ describe("devPluginLogic", () => {
 
     const state = loadState();
     expect(state.plugins["@saicmotor/plugin-reimbursement"]).toBeUndefined();
+  });
+
+  it("link registers plugin skills, unlink unregisters them, both refresh suite", () => {
+    fs.mkdirSync(path.join(tmpPluginDir, "skills", "saicmotor-reimbursement"), { recursive: true });
+    fs.writeFileSync(path.join(tmpPluginDir, "skills", "saicmotor-reimbursement", "SKILL.md"), "# reimb\n", "utf8");
+
+    // link → skill 注册到各 AI 客户端
+    devPluginLogic(tmpPluginDir, false);
+    const anyExistsAfterLink = Object.values(AI_CLIENT_SKILL_DIRS).some((dir) =>
+      fs.existsSync(path.join(dir, "saicmotor-reimbursement", "SKILL.md")),
+    );
+    expect(anyExistsAfterLink).toBe(true);
+
+    // unlink → skill 从各 AI 客户端注销
+    devPluginLogic(tmpPluginDir, true);
+    for (const dir of Object.values(AI_CLIENT_SKILL_DIRS)) {
+      expect(fs.existsSync(path.join(dir, "saicmotor-reimbursement"))).toBe(false);
+    }
+
+    expect(vi.mocked(registrar.writeSuiteRoutes)).toHaveBeenCalledTimes(2);
   });
 
   it("stop is idempotent when no link exists", () => {

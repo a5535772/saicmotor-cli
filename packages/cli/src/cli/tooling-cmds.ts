@@ -4,6 +4,7 @@ import path from "node:path";
 import { PluginManifestSchema } from "@saicmotor/sdk";
 import { linkedPluginsDir } from "../plugin/paths";
 import { loadState, saveState } from "../plugin/state";
+import * as registrar from "../plugin/registrar";
 
 // ── 提取的命令逻辑（可测试，无 console 输出）──
 
@@ -204,8 +205,10 @@ export function devPluginLogic(dir: string, stop: boolean): DevPluginResult {
       const state = loadState();
       delete state.plugins[name];
       saveState(state);
-      return { ok: true, data: { target, shortName, action: "unlink" } };
     }
+    // 解除 dev link = membership-remove：注销 skills + 刷新 suite（幂等）
+    registrar.unregisterPluginSkills(manifest.skills ?? []);
+    registrar.writeSuiteRoutes();
     return { ok: true, data: { target, shortName, action: "unlink" } };
   }
 
@@ -227,6 +230,10 @@ export function devPluginLogic(dir: string, stop: boolean): DevPluginResult {
     skills: manifest.skills ?? [],
   };
   saveState(state);
+
+  // dev 联调等价于 membership-add：注册该插件 skills + 刷新 suite
+  registrar.registerPluginSkills(path.resolve(dir), manifest.skills ?? []);
+  registrar.writeSuiteRoutes();
 
   return { ok: true, data: { target, shortName, action: "link" } };
 }
