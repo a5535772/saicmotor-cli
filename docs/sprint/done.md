@@ -9,6 +9,7 @@
 | # | 事项 | 类型 | 优先级 | 状态 |
 |---|------|------|:------:|:----:|
 | 1 | [包名迁移为 scoped 名 `@saicmotor/cli`，主推 `npx @saicmotor/cli@latest`](#1-基础架构包名迁移为-scoped-名-saicmotorcli主推-npx-saicmotorclilatest) | 基础架构 | 🔴 高 | [x] |
+| 2 | [卸载自动化：`npm uninstall -g` 时一键清理全部残留](#2-卸载自动化npm-uninstall--g-时一键清理全部残留) | 功能 | 🟡 中 | [x] |
 | 4 | [全局安装时 postinstall 输出被 npm 吞掉](#4-bug-全局安装时-postinstall-输出被-npm-吞掉应显示出来) | Bug | 🟢 低 | [x] |
 | 6 | [网关内置飞书 App Secret（硬编码）——生产前改为密钥注入](#6-安全债网关内置飞书-app-secret硬编码生产前必须改为密钥注入) | 安全/技术债 | 🟡 中 | [x] |
 | 9 | [plugin disable 只禁命令未清 skill/suite](#9-bug-plugin-disable-只禁命令未清-skillsuite) | Bug | 🔴 高 | [x] |
@@ -42,6 +43,27 @@
 **验收标准**：未配置任何全局安装的机器上，仅凭 scoped registry 配置即可 `npx @saicmotor/cli@latest` 完成登录与一次业务调用；仓库内无残留旧包名引用（除历史文档/changelog 外）。
 
 **完成记录**（2026-09-28）：代码层面核实通过——各包 `package.json` 已 scoped 化（`@saicmotor/cli` / `@saicmotor/sdk` / `@saicmotor/plugin-*`）、`package-lock.json` 与 `saicmotor.config.json` 与入口 shim `run.js` 均无旧名、bin 名 `saicmotor` 不变、安装文档主推 `npx @saicmotor/cli@latest`。旧架构文档 `ARCHITECTURE.md` / `ARCHITECTURE.2.0.md` 已归档至 `docs/history/`（架构文档待重写）。
+
+---
+
+## [x] 2. [功能] 卸载自动化：`npm uninstall -g` 时一键清理全部残留
+
+**提出时间**：2026-09-22（Sprint 4 人工验证后）
+**优先级**：🟡 中
+**完成记录**（2026-09-29）：已实现双路径一键卸载——`saicmotor uninstall`（主路径，清 skills + 删本地数据 + 自删 npm 包）和 `preuninstall` lifecycle 兜底（全局卸载时静默清理，永不阻断）。实现自检：
+
+- `src/plugin/registrar.ts` 新增 `unregisterAllSkills()` 按前缀 `saicmotor-*` 扫描删除（去重返回已删除列表）
+- `src/install/uninstall.ts` 新增 `uninstall({ selfRemove = true })` 编排器（三步序贯 + 自删失败降级打印手动命令）
+- `scripts/uninstall.js` 新增 preuninstall 钩子（纯 CJS，`npm_config_global` 守卫 + `npm_command === "exec"` npx 规避，永不抛）
+- `src/cli/index.ts` 注册顶层 `uninstall` 命令
+- `package.json` 加 `preuninstall` script + `files` 加 `scripts/uninstall.js`
+
+测试：`test/unit/uninstall.test.ts` 6 用例 + `test/unit/preuninstall-script.test.ts` 7 用例，覆盖幂等、前缀清空、junction/文件守卫、`SAICMOTOR_HOME` 尊重、npx 规避、本地卸载守卫、全局卸载清理、自删失败消息。设计文档 + 实施计划 + 最终审查均已通过。146/146 全绿，build 干净。
+
+**验证方式**：
+- `saicmotor uninstall` 一键清空 skills + 本地数据 + 自删 npm 包
+- 或直接 `npm uninstall -g @saicmotor/cli`（preuninstall 兜底清理）
+- 需人工隔离环境端到端确认。
 
 ---
 

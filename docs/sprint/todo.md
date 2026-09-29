@@ -9,45 +9,11 @@
 
 | # | 事项 | 类型 | 优先级 | 状态 |
 |---|------|------|:------:|:----:|
-| 2 | [卸载自动化：`npm uninstall -g` 时一键清理全部残留](#2-卸载自动化npm-uninstall--g-时一键清理全部残留) | 功能 | 🟡 中 | [ ] |
 | 3 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#3-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [ ] |
 | 5 | [未登录时 AI 主动交互登录并续跑原任务](#5-优化未登录时-ai-主动发起交互式登录并续跑原任务) | 体验 | 🟢 低 | [ ] |
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 | 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
 | 12 | [文档体系重构：框架开发者/业务开发者/架构全景三类手册 + 开发工具](#12-文档体系重构框架开发者业务开发者架构全景三类手册--开发工具) | 文档 | 🟡 中 | [ ] |
-
----
-
-## [ ] 2. 卸载自动化：`npm uninstall -g` 时一键清理全部残留
-
-**提出时间**：2026-09-22（Sprint 4 人工验证后）
-**优先级**：🟡 中
-**背景**：目前用户卸载 saicmotor-cli 需要手工执行三件事（见人工手册阶段 4），漏做任何一件都会留残留：
-
-1. **清除 AI skills** —— `saicmotor-suite / saicmotor-leave / saicmotor-attendance / saicmotor-shared` 已注册到各 AI 客户端（中央仓 `~/.agents/skills/` + `~/.claude/skills/`、`~/.codebuddy/skills/` 等符号链接），卸载 npm 包不会动它们。
-2. **清除本地数据** —— `~/.saicmotor/`（config.json + 凭据缓存）。
-3. **清除 npm 全局残留** —— 极端情况下 `npm ls -g` 仍有 saicmotor-cli 条目。
-
-**目标**：用户执行 `npm uninstall -g saicmotor-cli` 时自动完成上述清理，或提供一条 `saicmotor uninstall`（卸载前可用）命令完成清理。
-
-**可选方案（待评审）**：
-
-| 方案 | 做法 | 风险/成本 |
-|------|------|-----------|
-| A | 利用 npm `preuninstall` lifecycle 脚本自动清理 | npm v11 对 `-g` 的 lifecycle 管控与 postinstall 同（默认可能被拦，需 allow-scripts）；卸载时脚本要能找到 `skills` CLI；需实测 |
-| B | 在 CLI 内提供 `saicmotor uninstall` 向导：列出将删除的 skills/数据 → 确认 → 执行；文档提示"先跑此命令再 npm uninstall" | 不依赖 npm lifecycle，行为可控；多一条命令 |
-| C | A+B 组合：有 `saicmotor uninstall` 命令，preuninstall 作为兜底（静默失败不阻断卸载） | 体验最好，工作量略大 |
-
-**需求要点**：
-
-- [ ] 清理前展示将删除内容（skills 列表、`~/.saicmotor` 路径），要求用户确认（支持 `--yes` 跳过）
-- [ ] skills 删除走 `npx skills rm <name> -g`（四个包名），失败不阻塞、给出手动命令
-- [ ] 删除 `~/.saicmotor`（尊重 `SAICMOTOR_HOME` 覆盖）
-- [ ] 完成后提示验证方法：`saicmotor --version` 应不可用（npm 包卸载后）、`npx skills ls -g` 无 saicmotor 条目
-- [ ] npx 临时调用场景不做任何清理（参考飞书 CLI npx 检测教训）
-- [ ] 补测试 + 人工手册更新（卸载章节可由手工步骤缩减为一条命令）
-
-**验收标准**：隔离环境 `npm install -g` → 登录 → `npm uninstall -g`（或先跑卸载命令）后，skills/本地数据/npm 全局三处全部干净。
 
 ---
 
