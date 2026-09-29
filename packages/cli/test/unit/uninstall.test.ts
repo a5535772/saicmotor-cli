@@ -87,6 +87,7 @@ describe("uninstall", () => {
   const origHome = process.env.SAICMOTOR_HOME;
   let tmpHome: string;
   let tmpClient: string;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     tmpHome = path.join(os.tmpdir(), `saicmotor-uninstall-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -100,7 +101,7 @@ describe("uninstall", () => {
       fs.mkdirSync(AI_CLIENT_SKILL_DIRS[k], { recursive: true });
       fs.mkdirSync(path.join(AI_CLIENT_SKILL_DIRS[k], "saicmotor-suite"), { recursive: true });
     }
-    vi.spyOn(console, "log").mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -136,6 +137,13 @@ describe("uninstall", () => {
 
     expect(errSpy).toHaveBeenCalledWith(
       expect.stringContaining("npm uninstall -g @saicmotor/cli")
+    );
+    // 自删失败时提示「包仍存在」，而非误导性打印「卸载完成」
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining("npm 包仍存在")
+    );
+    expect(consoleLogSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining("卸载完成")
     );
   });
 });

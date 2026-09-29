@@ -33,13 +33,17 @@ export function uninstall({ selfRemove = true }: UninstallOptions = {}): void {
   // 3. 自删 npm 包
   if (!selfRemove) return;
 
+  let selfRemoved = true;
   try {
     execSync(`npm uninstall -g ${PKG_NAME}`, { stdio: "inherit" });
   } catch {
+    selfRemoved = false;
     console.error(`⚠ npm 包自删失败，请手动执行: npm uninstall -g ${PKG_NAME}`);
   }
 
   console.log(
-    "卸载完成。验证：saicmotor --version 应不可用；各 AI 客户端 skills 目录应无 saicmotor-* 条目"
+    selfRemoved
+      ? "卸载完成。验证：saicmotor --version 应不可用；各 AI 客户端 skills 目录应无 saicmotor-* 条目"
+      : "npm 包仍存在，请先手动执行上述命令后再验证。"
   );
 }

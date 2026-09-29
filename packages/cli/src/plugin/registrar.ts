@@ -4,7 +4,8 @@ import os from "node:os";
 import { buildSuiteRoutes, generateSuiteSkill } from "./suite";
 import { findPackageRoot } from "../pkg-root";
 
-/** AI 客户端 skills 目录列表（集中常量化） */
+/** AI 客户端 skills 目录列表（集中常量化）
+ * 注意：与 scripts/uninstall.js 的 clientSkillDirs() 保持一致（新增客户端需两处同步）。 */
 export const AI_CLIENT_SKILL_DIRS: Record<string, string> = {
   claude: path.join(os.homedir(), ".claude", "skills"),
   agents: path.join(os.homedir(), ".agents", "skills"),

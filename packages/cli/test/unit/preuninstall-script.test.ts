@@ -8,9 +8,10 @@ import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const scriptPath = fileURLToPath(new URL("../../scripts/uninstall.js", import.meta.url));
-const { cleanup, isNpx } = require("../../scripts/uninstall.js") as {
+const { cleanup, isNpx, isGlobalUninstall } = require("../../scripts/uninstall.js") as {
   cleanup: (opts?: { homedir?: string }) => void;
   isNpx: () => boolean;
+  isGlobalUninstall: () => boolean;
 };
 
 describe("preuninstall script: cleanup", () => {
@@ -88,6 +89,73 @@ describe("preuninstall script: npx guard", () => {
     try {
       expect(res.status).toBe(0);
       expect(fs.existsSync(tmpHome)).toBe(true); // 未被删
+    } finally {
+      fs.rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("preuninstall script: global-only guard", () => {
+  const origGlobal = process.env.npm_config_global;
+
+  afterEach(() => {
+    if (origGlobal === undefined) delete process.env.npm_config_global;
+    else process.env.npm_config_global = origGlobal;
+  });
+
+  it("isGlobalUninstall returns true only when npm_config_global=true", () => {
+    delete process.env.npm_config_global;
+    expect(isGlobalUninstall()).toBe(false);
+    process.env.npm_config_global = "true";
+    expect(isGlobalUninstall()).toBe(true);
+  });
+
+  it("script exits without cleaning on local (non-global) uninstall", () => {
+    const tmpHome = path.join(os.tmpdir(), `saicmotor-preuninstall-local-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(path.join(tmpHome, ".claude", "skills", "saicmotor-suite"), { recursive: true });
+    fs.writeFileSync(path.join(tmpHome, "config.json"), "{}", "utf8");
+
+    const res = spawnSync(process.execPath, [scriptPath], {
+      env: {
+        ...process.env,
+        npm_command: "uninstall",
+        npm_config_global: "false",
+        SAICMOTOR_HOME: tmpHome,
+        HOME: tmpHome,
+        USERPROFILE: tmpHome,
+      },
+      encoding: "utf8",
+    });
+
+    try {
+      expect(res.status).toBe(0);
+      expect(fs.existsSync(tmpHome)).toBe(true); // 本地卸载不清全局数据
+      expect(fs.existsSync(path.join(tmpHome, ".claude", "skills", "saicmotor-suite"))).toBe(true);
+    } finally {
+      fs.rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+
+  it("script cleans on global uninstall (npm_config_global=true)", () => {
+    const tmpHome = path.join(os.tmpdir(), `saicmotor-preuninstall-global-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    fs.mkdirSync(path.join(tmpHome, ".claude", "skills", "saicmotor-suite"), { recursive: true });
+    fs.writeFileSync(path.join(tmpHome, "config.json"), "{}", "utf8");
+
+    const res = spawnSync(process.execPath, [scriptPath], {
+      env: {
+        ...process.env,
+        npm_command: "uninstall",
+        npm_config_global: "true",
+        SAICMOTOR_HOME: tmpHome,
+        HOME: tmpHome,
+        USERPROFILE: tmpHome,
+      },
+      encoding: "utf8",
+    });
+
+    try {
+      expect(res.status).toBe(0);
+      expect(fs.existsSync(tmpHome)).toBe(false); // 全局卸载清干净
     } finally {
       fs.rmSync(tmpHome, { recursive: true, force: true });
     }
