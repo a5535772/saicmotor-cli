@@ -11,6 +11,7 @@
 |---|------|------|:------:|:----:|
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 | 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
+| 9 | [版本号管理体系规划](#9-版本号管理体系规划) | 专题 | 🔴 高 | [ ] |
 
 ---
 
@@ -61,3 +62,58 @@ npm publish → prepublishOnly: "npm run build && npm test"
 - 方案 B：workspaces 声明里把 sdk 放在第一位（利用 npm 拓扑排序），只保留 `npm run build --workspaces`
 
 **验收标准**：`npm run build` 输出中 `@saicmotor/sdk` 只出现一次。
+
+---
+
+## [ ] 9. [专题] 版本号管理体系规划
+
+**提出时间**：2026-09-29
+**优先级**：🔴 高
+**类型**：专题（需规划 + 文档 + 代码调整）
+
+### 问题背景
+
+当前版本号散落在多处且策略不一致，存在隐藏陷阱：
+
+**版本号出现的位置**：
+
+| 位置 | 当前值 | 类型 | 升级时需手动改？ |
+|------|--------|------|:---:|
+| `packages/cli/package.json` → `version` | `0.8.0` | 单一事实源 | ✅ |
+| `src/cli/index.ts:16` → `program.version()` | `"0.8.0"` | 硬编码字符串 | ✅ |
+| `src/plugin/suite.ts:27` → suite SKILL.md | `"version: 0.8.0"` | 硬编码字符串 | ✅ |
+| `src/plugin/loader.ts:70` → `CORE_VERSION` | `readCoreVersion()` | ✅ 动态读取 `package.json` | ❌ |
+| `src/cli/tooling-cmds.ts:47` → 脚手架 SDK 版本 | `"^0.8.0"` | 硬编码 | ✅ |
+| `src/cli/tooling-cmds.ts:85` → 脚手架 engine 字段 | `"^0.8.0"` | 硬编码 | ✅ |
+
+**核心陷阱 — semver 0.x 的 `^` 不跨小版本**：
+
+```
+插件 engine 声明 "^0.8.0"  → semver.satisfies("0.9.0", "^0.8.0") = false
+```
+
+CLI 从 0.8.0 升级到 0.9.0 时，所有声明 `"engine": "^0.8.0"` 的旧插件**全部被跳过**。这意味着：
+
+1. **每次 CLI 升级都是一次 breaking change**（对插件而言）
+2. 用户升级 CLI 后业务命令全部消失，看到的是 3 条 `[saicmotor] 插件不兼容` 警告
+3. 插件开发者必须发布新版本（只改 `engine` 字段），用户重新安装
+
+### 需决策的议题
+
+1. **CLI 自身的版本号体系**：semver 策略（0.x 是否允许跨小版本？何时跳 1.0？）
+2. **插件 engine 声明策略**：脚手架默认生成 `^` 还是 `>=` ？两者各自的语义和后果
+3. **engine 兼容检查的粒度**：目前只检查 `CORE_VERSION` 是否满足 `manifest.engine`。未来是否需要「最低引擎版本 + 最高引擎版本」两段式？
+4. **版本号的硬编码消除**：`program.version()` 和 suite SKILL.md 是否也应动态读取 `package.json`？
+5. **SDK 版本号**：`@saicmotor/sdk` 和 `@saicmotor/cli` 是否需要版本号联动？
+
+### 交付物
+
+1. 一份版本管理规范文档（纳入 framework-v2）
+2. 代码调整（消除硬编码、修正脚手架默认 engine 声明）
+3. 升级 checklist 文档
+
+### 验收标准
+
+- CLI 0.x → 0.y 升级后，已装插件不因 engine 兼容检查被禁用（在不涉及 breaking change 的前提下）
+- 版本号升级 checklist 文档明确告诉开发者"改哪几个文件"
+- 脚手架生成的 `engine` 字段默认值策略合理且有文档说明
