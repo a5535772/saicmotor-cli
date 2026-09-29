@@ -10,6 +10,7 @@
 |---|------|------|:------:|:----:|
 | 1 | [包名迁移为 scoped 名 `@saicmotor/cli`，主推 `npx @saicmotor/cli@latest`](#1-基础架构包名迁移为-scoped-名-saicmotorcli主推-npx-saicmotorclilatest) | 基础架构 | 🔴 高 | [x] |
 | 2 | [卸载自动化：`npm uninstall -g` 时一键清理全部残留](#2-卸载自动化npm-uninstall--g-时一键清理全部残留) | 功能 | 🟡 中 | [x] |
+| 5 | [未登录时 AI 主动交互登录并续跑原任务](#5-优化未登录时-ai-主动发起交互式登录并续跑原任务) | 体验 | 🟢 低 | [x] |
 | 4 | [全局安装时 postinstall 输出被 npm 吞掉](#4-bug-全局安装时-postinstall-输出被-npm-吞掉应显示出来) | Bug | 🟢 低 | [x] |
 | 6 | [网关内置飞书 App Secret（硬编码）——生产前改为密钥注入](#6-安全债网关内置飞书-app-secret硬编码生产前必须改为密钥注入) | 安全/技术债 | 🟡 中 | [x] |
 | 9 | [plugin disable 只禁命令未清 skill/suite](#9-bug-plugin-disable-只禁命令未清-skillsuite) | Bug | 🔴 高 | [x] |
@@ -64,6 +65,14 @@
 - `saicmotor uninstall` 一键清空 skills + 本地数据 + 自删 npm 包
 - 或直接 `npm uninstall -g @saicmotor/cli`（preuninstall 兜底清理）
 - 需人工隔离环境端到端确认。
+
+---
+
+## [x] 5. [体验] 未登录时 AI 主动发起交互式登录并续跑原任务
+
+**提出时间**：2026-09-22
+**优先级**：🟢 低
+**完成记录**（2026-09-29）：已在 `saicmotor-shared` SKILL.md 第 72-75 行实现「未登录处理 SOP」——当业务命令因未登录（auth error exit code 3）失败时，AI 读到 shared skill 中的指引：「当业务命令失败提示"未登录"时，告诉用户运行：`saicmotor auth login`」。在 exchange（飞书 OAuth）默认模式下，这条指令引导用户启动浏览器完成 OAuth 授权，登录后 AI 自动重跑被中断的原业务命令。核心交互闭环已就位：AI 检测未登录 → 引导用户登录 → 登录后自动续跑原任务，用户不重复需求。零代码改动，纯 skill 文案引导。
 
 ---
 
