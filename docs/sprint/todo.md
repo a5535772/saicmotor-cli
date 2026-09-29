@@ -98,22 +98,55 @@ CLI 从 0.8.0 升级到 0.9.0 时，所有声明 `"engine": "^0.8.0"` 的旧插�
 2. 用户升级 CLI 后业务命令全部消失，看到的是 3 条 `[saicmotor] 插件不兼容` 警告
 3. 插件开发者必须发布新版本（只改 `engine` 字段），用户重新安装
 
+### 架构决策（已定）
+
+**两层模型**：
+
+```
+┌─────────────────────────────────────────────┐
+│  架构组维护（统一版本号，永远同步发版）         │
+│  @saicmotor/cli  +  @saicmotor/sdk           │
+│  +  saicmotor-suite  +  saicmotor-shared     │
+│  例：cli 0.9.0 → sdk 0.9.0 → suite "0.9.0"  │
+│  改一处，全体系自动同步                        │
+├─────────────────────────────────────────────┤
+│  项目组维护（独立版本号 + 声明核心兼容范围）     │
+│  @saicmotor/plugin-leave       v1.2.0        │
+│  @saicmotor/plugin-attendance  v2.0.1        │
+│  @saicmotor/plugin-*           engine: ">=0.8.0" │
+│  插件有自己的发布节奏，不受核心牵制            │
+└─────────────────────────────────────────────┘
+```
+
+类比 Spring 生态：Spring Boot（核心）统一版本 → 各 Starter（插件）独立版本 + 声明兼容的 Boot 版本范围。
+
 ### 需决策的议题
 
-1. **CLI 自身的版本号体系**：semver 策略（0.x 是否允许跨小版本？何时跳 1.0？）
-2. **插件 engine 声明策略**：脚手架默认生成 `^` 还是 `>=` ？两者各自的语义和后果
-3. **engine 兼容检查的粒度**：目前只检查 `CORE_VERSION` 是否满足 `manifest.engine`。未来是否需要「最低引擎版本 + 最高引擎版本」两段式？
-4. **版本号的硬编码消除**：`program.version()` 和 suite SKILL.md 是否也应动态读取 `package.json`？
-5. **SDK 版本号**：`@saicmotor/sdk` 和 `@saicmotor/cli` 是否需要版本号联动？
+1. **核心包版本硬编码消除**：`program.version()` 和 suite SKILL.md 的 `version` 字段应动态读取 `packages/cli/package.json`→`version`，与 `CORE_VERSION` 对齐——改一个文件，全体系同步。sdk 的 version 在 publish 脚本中自动同步到 cli 的 version 值。
+
+2. **插件 engine 声明默认值**：过渡期（0.x）脚手架生成 `>=0.8.0` 而非 `^0.8.0`——因为 semver 0.x 的 `^` 连小版本都不跨（`^0.8.0` = `<0.9.0`），导致 CLI 每次升级都变成对插件的 breaking change。
+
+   | 方案 | 声明 | 0.8→0.9 兼容？ | 适用阶段 |
+   |------|------|:---:|------|
+   | `>=0.8.0` | 开放上界 | ✅ | 0.x 过渡期（当前） |
+   | `^1.0.0` | `<2.0.0` | — | 跳 1.0 后启用 semver 标准路径 |
+
+3. **engine 兼容检查的粒度**：当前只检查 `CORE_VERSION` 是否满足 `manifest.engine`。未来是否做严格双向检查（核心也声明支持的插件最小版本）？目前先保持单向检查。
+
+4. **何时跳 1.0**：API 稳定、插件生态 ≥ 3 个生产插件、连续 2 个小版本无 breaking change。
 
 ### 交付物
 
-1. 一份版本管理规范文档（纳入 framework-v2）
-2. 代码调整（消除硬编码、修正脚手架默认 engine 声明）
+1. 版本管理规范文档（纳入 framework-v2，作为 `08-versioning.md` 或合并入 `09-build-and-publish.md`）
+2. 代码调整：
+   - `program.version()` → 动态读 `package.json`
+   - suite `version` → 构建时从 `package.json` 注入
+   - 脚手架 `engine` 默认值 → `>=0.8.0`
+   - sdk 发布脚本 → 自动同步 cli version
 3. 升级 checklist 文档
 
 ### 验收标准
 
-- CLI 0.x → 0.y 升级后，已装插件不因 engine 兼容检查被禁用（在不涉及 breaking change 的前提下）
-- 版本号升级 checklist 文档明确告诉开发者"改哪几个文件"
-- 脚手架生成的 `engine` 字段默认值策略合理且有文档说明
+- CLI 0.8 → 0.9 升级后，engine 声明 `>=0.8.0` 的旧插件不被禁用
+- 核心三件套（cli/sdk/suite）版本号始终一致，只需改 `packages/cli/package.json` 的 `version` 一处
+- 脚手架生成的插件 `engine` 字段默认值为 `>=x.y.z`（0.x 阶段）
