@@ -19,6 +19,7 @@ export interface ScriptContext {
 
 export type ScriptFn = (ctx: ScriptContext) => Promise<RunResult>;
 
+/** 仅供测试使用的路径构建器，生产脚本解析走 findScript() */
 export function scriptFileFor(serviceName: string, resourceName: string, methodName: string): string {
   return path.join(distRoot(), "scripts", serviceName, resourceName, `${methodName}.js`);
 }

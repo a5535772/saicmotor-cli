@@ -28,5 +28,5 @@ export function loadState(): PluginState {
 export function saveState(state: PluginState): void {
   const dir = path.dirname(stateFilePath());
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(stateFilePath(), JSON.stringify(state, null, 2), "utf8");
+  fs.writeFileSync(stateFilePath(), JSON.stringify(state, null, 2), { encoding: "utf8", mode: 0o600 });
 }

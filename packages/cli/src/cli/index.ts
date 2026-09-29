@@ -18,8 +18,9 @@ program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平�
 const config = loadConfig();
 
 // 加载核心 catalog + 插件 catalog
-const coreServices = loadCatalog();
-const { plugins, warnings } = loadPlugins(config);
+const { services: coreServices, warnings: catalogWarnings } = loadCatalog();
+const { plugins, warnings: pluginWarnings } = loadPlugins(config);
+const warnings = [...catalogWarnings, ...pluginWarnings];
 const pluginServices = plugins.flatMap((p) => p.services);
 const allServices = [...coreServices, ...pluginServices];
 

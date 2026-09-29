@@ -23,7 +23,7 @@ function checkEnvelope(resp: HttpResponse): void {
     throw new SaicmotorError("upstream", `上游返回 HTTP ${resp.status}`, { upstream: { message: extractMessage(resp.body) } });
   }
   const body = resp.body as Record<string, unknown> | undefined;
-  if (body && typeof body === "object" && body.code !== 0) {
+  if (body && typeof body === "object" && Number(body.code) !== 0) {
     throw new SaicmotorError("upstream", `上游业务错误: ${body.msg ?? ""}`, { upstream: { code: body.code, message: extractMessage(body) } });
   }
 }

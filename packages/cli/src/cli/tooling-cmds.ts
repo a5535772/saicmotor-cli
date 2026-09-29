@@ -44,7 +44,7 @@ export function createPluginLogic(name: string, outputDir?: string): CreatePlugi
     },
     dependencies: { zod: "^3.23.8" },
     devDependencies: {
-      "@saicmotor/sdk": "*",
+      "@saicmotor/sdk": "^0.8.0",
       "@types/node": "^20.14.0",
       typescript: "^5.5.0",
       vitest: "^2.0.0",
@@ -172,8 +172,8 @@ export function validatePluginLogic(dir: string): ValidatePluginResult {
 
   try {
     PluginManifestSchema.parse(manifest);
-  } catch (e: any) {
-    return { ok: false, error: `manifest 校验失败: ${e.message}` };
+  } catch (e: unknown) {
+    return { ok: false, error: `manifest 校验失败: ${(e as Error).message}` };
   }
 
   return { ok: true };

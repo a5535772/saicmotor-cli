@@ -75,6 +75,7 @@ export function catalogDir(): string {
   return process.env.SAICMOTOR_CATALOG ?? packageFile(path.join("catalog", "services"));
 }
 
+/** 仅供测试使用，生产脚本路径由 findScript() 内部解析 */
 export function scriptsDir(): string {
   return process.env.SAICMOTOR_SCRIPTS ?? packageFile("scripts");
 }

@@ -10,6 +10,10 @@ import * as registrar from "../plugin/registrar";
 
 // ── 工具函数 ──
 
+/** npm package name 白名单：拒绝含 shell 元字符的输入（防止命令注入） */
+const SAFE_PKG_NAME_RE =
+  /^@?[a-z0-9][\w\-.]*(\/[a-z0-9][\w\-.]*)?$/i;
+
 export function jsonOut(data: unknown): void {
   console.log(JSON.stringify({ ok: true, data }, null, 2));
 }
@@ -20,8 +24,12 @@ export function jsonErr(error: string): void {
 
 /**
  * 短名展开："reimbursement" → "@saicmotor/plugin-reimbursement"
+ * 拒绝含 shell 元字符的输入，防止命令注入。
  */
 export function fullName(input: string): string {
+  if (!SAFE_PKG_NAME_RE.test(input) && !SAFE_PKG_NAME_RE.test(`@saicmotor/plugin-${input}`)) {
+    throw new Error(`无效的包名: ${input}`);
+  }
   if (input.startsWith("@saicmotor/plugin-")) return input;
   if (input.startsWith("plugin-")) return `@saicmotor/${input}`;
   return `@saicmotor/plugin-${input}`;
@@ -62,8 +70,8 @@ export function installPluginLogic(
       `npm install ${name} --prefix "${prefixDir}" --legacy-peer-deps${registryFlag}`,
       { stdio: "pipe", cwd: prefixDir },
     );
-  } catch (e: any) {
-    return { ok: false, error: e.message };
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message };
   }
 
   const pkgDir = path.join(prefixDir, "node_modules", name);
@@ -123,12 +131,13 @@ export function uninstallPluginLogic(name: string): PluginUninstallResult {
 
   registrar.unregisterPluginSkills(entry.skills ?? []);
 
+  let npmUninstallFailed = false;
   try {
     execSync(`npm uninstall ${full} --prefix "${pluginsDir()}"`, {
       stdio: "pipe",
     });
   } catch {
-    // npm 卸载失败不阻断后续清理
+    npmUninstallFailed = true;
   }
 
   delete state.plugins[full];
@@ -136,7 +145,11 @@ export function uninstallPluginLogic(name: string): PluginUninstallResult {
 
   registrar.writeSuiteRoutes();
 
-  return { ok: true, data: { name: full } };
+  const result: PluginUninstallResult = { ok: true, data: { name: full } };
+  if (npmUninstallFailed) {
+    result.error = `state 已清理，但 npm 包自删失败，请手动执行: npm uninstall ${full} --prefix "${pluginsDir()}"`;
+  }
+  return result;
 }
 
 export interface PluginToggleResult {
@@ -206,8 +219,8 @@ export function upgradePluginLogic(
       `npm update ${full} --prefix "${prefixDir}" --legacy-peer-deps${registryFlag}`,
       { stdio: "pipe" },
     );
-  } catch (e: any) {
-    return { ok: false, error: e.message };
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message };
   }
 
   // 幂等重注册 skills（更改的 skill 靠跳过，不改动既有 junction）
@@ -288,13 +301,16 @@ export function registerPluginCommands(program: Command): void {
       const result = uninstallPluginLogic(name);
       if (opts.json) {
         if (result.ok && result.data) {
-          jsonOut({ uninstalled: result.data.name });
+          const out: Record<string, unknown> = { uninstalled: result.data.name };
+          if (result.error) (out as Record<string, unknown>).warning = result.error;
+          jsonOut(out);
         } else {
           jsonErr(result.error ?? "卸载失败");
         }
       } else {
         if (result.ok && result.data) {
           console.log(`✓ ${result.data.name} 已卸载`);
+          if (result.error) console.error(`⚠ ${result.error}`);
         } else {
           console.error(`✗ 未找到插件: ${result.error?.split(": ").pop()}`);
         }

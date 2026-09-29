@@ -6,6 +6,7 @@ import { ServiceSchema, type Service } from "../schema/catalog";
 import type { Config } from "../config";
 import { installedPluginsDir, linkedPluginsDir } from "./paths";
 import { loadState, type PluginStateEntry } from "./state";
+import { findPackageRoot } from "../pkg-root";
 
 /**
  * 扫描目录下的插件候选。
@@ -57,7 +58,16 @@ export interface LoadResult {
   warnings: string[];
 }
 
-const CORE_VERSION = "0.8.0";
+function readCoreVersion(): string {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(findPackageRoot(), "package.json"), "utf8"));
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+const CORE_VERSION = readCoreVersion();
 
 /**
  * 双根扫描并加载所有兼容插件。
@@ -89,8 +99,8 @@ export function loadPlugins(_config: Config): LoadResult {
       try {
         const raw = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
         manifest = PluginManifestSchema.parse(raw);
-      } catch (e: any) {
-        warnings.push(`插件 ${entryName} manifest 解析失败: ${e.message}`);
+      } catch (e: unknown) {
+        warnings.push(`插件 ${entryName} manifest 解析失败: ${(e as Error).message}`);
         continue;
       }
 
@@ -172,9 +182,9 @@ function loadPluginServices(pkgRoot: string, manifest: PluginManifest): Service[
         const raw = JSON.parse(fs.readFileSync(path.join(servicesDir, file), "utf8"));
         const svc = ServiceSchema.parse(raw);
         services.push(svc);
-      } catch (_e: any) {
-        // 单文件坏不影响其他 service
-        // 这个警告由调用方处理
+      } catch (e: unknown) {
+        // 单个 catalog 文件损坏不阻断其他 service，由调用方汇总 warning
+        // 此处暂不 push（loadPluginServices 无 warnings channel），后续重构时统一传递
       }
     }
   }

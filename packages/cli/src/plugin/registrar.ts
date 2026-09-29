@@ -44,8 +44,8 @@ export function registerSkill(skillDir: string, skillName: string): SkillRegResu
       try {
         copyDirSync(skillDir, target);
         results.push({ skillName, client, method: "copy" });
-      } catch (e: any) {
-        results.push({ skillName, client, method: "skipped", reason: `复制失败: ${e.message}` });
+      } catch (e: unknown) {
+        results.push({ skillName, client, method: "skipped", reason: `复制失败: ${(e as Error).message}` });
       }
     }
   }
@@ -86,8 +86,8 @@ export function writeSuiteRoutes(suiteDir?: string): void {
     if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
     fs.writeFileSync(path.join(targetDir, "SKILL.md"), md, "utf8");
     registerSkill(targetDir, "saicmotor-suite");
-  } catch (e: any) {
-    console.error(`[saicmotor] suite 路由刷新失败: ${e.message}`);
+  } catch (e: unknown) {
+    console.error(`[saicmotor] suite 路由刷新失败: ${(e as Error).message}`);
   }
 }
 

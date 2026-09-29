@@ -28,7 +28,7 @@ export async function loginWithPassword(config: Config, username: string, passwo
     throw new SaicmotorError("auth", `登录失败 (HTTP ${resp.status})`, { hint: "检查网关地址或账号密码" });
   }
   const body = resp.body as Record<string, unknown> | undefined;
-  if (body && typeof body === "object" && body.code !== 0) {
+  if (body && typeof body === "object" && Number(body.code) !== 0) {
     throw new SaicmotorError("auth", `登录失败: ${body.msg ?? "未知错误"}`, { hint: "检查账号密码" });
   }
   const token = getByPath(body, config.auth.tokenPath);

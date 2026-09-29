@@ -14,18 +14,23 @@ describe("loadCatalog", () => {
       name: "leave", servicePath: "/leave",
       resources: { balance: { methods: { query: { id: "balance.query", path: "/balance", httpMethod: "GET" } } } },
     }));
-    const services = loadCatalog();
+    const { services } = loadCatalog();
     expect(services).toHaveLength(1);
     expect(services[0].name).toBe("leave");
   });
 
-  it("throws on invalid catalog", () => {
+  it("warns on invalid catalog instead of throwing", () => {
     fs.writeFileSync(path.join(tmp, "bad.json"), JSON.stringify({ name: "bad" }));
-    expect(() => loadCatalog()).toThrow(/catalog 校验失败/);
+    const { services, warnings } = loadCatalog();
+    expect(services).toHaveLength(0);
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings[0]).toMatch(/catalog 校验失败/);
   });
 
   it("returns empty when dir missing", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
-    expect(loadCatalog()).toEqual([]);
+    const { services, warnings } = loadCatalog();
+    expect(services).toEqual([]);
+    expect(warnings).toEqual([]);
   });
 });
