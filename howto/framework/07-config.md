@@ -141,17 +141,32 @@ export const DEFAULT_CONFIG: Config = {
 
 ## 六、发布生产前必须变更项
 
+> **经验总结**：如果认证方式不变（仍为 exchange OAuth），且网关路由遵循同一套规范（`/auth/login`、`/auth/exchange/start`、`/auth/exchange`），那么**只改一个文件就够了**：
+>
+> ```diff
+> - "gateway": "http://localhost:8081"
+> + "gateway": "https://api.production.example.com"
+> ```
+>
+> `saicmotor.config.json` 填入真实网关后，`config.ts:35` 的硬编码兜底值 `"http://localhost:8081"` 永远不会被访问——它在优先级链的最末端，前三层（环境变量 → 用户配置 → 包级默认）任意一层有值即跳过。
+>
+> `loopbackHost: "127.0.0.1"` 和 `loopbackPort: 3000` 是 OAuth 本地回调服务器，不涉及生产环境。`tokenHeader`/`tokenPrefix`（`Authorization`/`Bearer`）是 HTTP 标准，通常无需改动。
+>
+> 只有网关的实际路由与当前默认值不同时，才需要额外动 `config.ts`。
+
 | 优先级 | 配置项 | 当前值 | 生产值 | 位置 |
 |:---:|--------|--------|--------|------|
-| 🔴 | `defaults.gateway` | `http://localhost:8081` | 生产网关 URL | `saicmotor.config.json` |
-| 🔴 | `auth.loginPath` | `/auth/login` | 确认与网关一致 | `config.ts` `DEFAULT_CONFIG` |
-| 🔴 | `auth.startPath` | `/auth/exchange/start` | 确认与 OAuth 端点一致 | `config.ts` `DEFAULT_CONFIG` |
-| 🔴 | `auth.exchangePath` | `/auth/exchange` | 确认与 OAuth 端点一致 | `config.ts` `DEFAULT_CONFIG` |
-| 🟡 | `auth.tokenPath` | `data.token` | 确认响应 JSON 结构 | `config.ts` `DEFAULT_CONFIG` |
-| 🟡 | `auth.loopbackPort` | `3000` | 避免常见端口冲突 | `config.ts` `DEFAULT_CONFIG` |
-| 🟡 | `installUrl` | `@saicmotor/cli` | 确认 npm registry 包名 | `saicmotor.config.json` |
-| 🟢 | `auth.tokenHeader` | `Authorization` | 通常不变 | `config.ts` `DEFAULT_CONFIG` |
-| 🟢 | `auth.tokenPrefix` | `Bearer` | 通常不变 | `config.ts` `DEFAULT_CONFIG` |
+| 🔴 | `defaults.gateway` | `http://localhost:8081` | 生产网关 URL | `saicmotor.config.json` ← **唯一必改** |
+| ⚠️ | `auth.loginPath` | `/auth/login` | 确认与网关一致 | `config.ts`（网关路由不一致时） |
+| ⚠️ | `auth.startPath` | `/auth/exchange/start` | 确认与 OAuth 端点一致 | `config.ts`（网关路由不一致时） |
+| ⚠️ | `auth.exchangePath` | `/auth/exchange` | 确认与 OAuth 端点一致 | `config.ts`（网关路由不一致时） |
+| ⚠️ | `auth.tokenPath` | `data.token` | 确认响应 JSON 结构 | `config.ts`（响应结构不同时） |
+| 🟡 | `auth.loopbackPort` | `3000` | 避免常见端口冲突 | `config.ts`（端口冲突时） |
+| 🟡 | `installUrl` | `@saicmotor/cli` | 确认 npm registry 包名 | `saicmotor.config.json`（包名变更时） |
+| 🟢 | `auth.tokenHeader` | `Authorization` | 通常不变 | — |
+| 🟢 | `auth.tokenPrefix` | `Bearer` | 通常不变 | — |
+| 🟢 | `auth.loopbackHost` | `127.0.0.1` | 本地回环，不变 | — |
+| 🟢 | `auth.callbackTimeoutMs` | `120000` | 2 分钟足够 | — |
 
 ---
 
