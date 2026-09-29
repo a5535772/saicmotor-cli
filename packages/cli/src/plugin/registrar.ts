@@ -122,6 +122,42 @@ export function unregisterPluginSkills(skillDirs: string[]): void {
   }
 }
 
+/**
+ * 卸载全部 saicmotor skills：扫描各 AI 客户端目录，删除所有 `saicmotor-` 前缀的条目。
+ * 不依赖 state.json 完整——即使用户手动删过状态，残留 junction 也能被兜住。
+ * 幂等：删除不存在的条目是 no-op。返回已删除的 skill 名（去重）。
+ */
+export function unregisterAllSkills(): string[] {
+  const removed = new Set<string>();
+
+  for (const clientSkillsDir of Object.values(AI_CLIENT_SKILL_DIRS)) {
+    if (!fs.existsSync(clientSkillsDir)) continue;
+
+    let entries: string[];
+    try {
+      entries = fs.readdirSync(clientSkillsDir);
+    } catch {
+      continue;
+    }
+
+    for (const name of entries) {
+      if (!name.startsWith("saicmotor-")) continue;
+      const target = path.join(clientSkillsDir, name);
+      try {
+        const stat = fs.lstatSync(target);
+        if (stat.isSymbolicLink() || stat.isDirectory()) {
+          fs.rmSync(target, { recursive: true, force: true });
+          removed.add(name);
+        }
+      } catch {
+        // 删除失败不阻断卸载流程
+      }
+    }
+  }
+
+  return [...removed];
+}
+
 /** 递归复制目录（同步版，用于降级） */
 function copyDirSync(src: string, dest: string): void {
   fs.mkdirSync(dest, { recursive: true });
