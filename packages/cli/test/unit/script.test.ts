@@ -9,6 +9,7 @@ import { loadConfig } from "../../src/config";
 import { writeCredentials } from "../../src/auth/store";
 import { startServer, MockServer } from "../helpers/server";
 import type { Service } from "../../src/schema/catalog";
+import { loadPlugins, type LoadedPlugin } from "../../src/plugin/loader";
 
 const service: Service = {
   name: "attendance",
@@ -106,5 +107,74 @@ describe("script scheduling", () => {
 
     expect((result.data as any).dryRun).toBe(true);
     expect((result.data as any).token).toBe("string");
+  });
+});
+
+describe("findScript via plugin dist/scripts (no SAICMOTOR_SCRIPTS)", () => {
+  let pluginHome: string;
+
+  beforeEach(() => {
+    pluginHome = fs.mkdtempSync(path.join(os.tmpdir(), "saicmotor-plugin-"));
+    process.env.SAICMOTOR_HOME = pluginHome;
+    // 刻意不设 SAICMOTOR_SCRIPTS — 验证插件路径自身能命中
+    writeCredentials({ username: "zhangsan", password: "123456" });
+  });
+
+  afterEach(() => {
+    delete process.env.SAICMOTOR_HOME;
+    fs.rmSync(pluginHome, { recursive: true, force: true });
+  });
+
+  function setupPlugin(pluginName: string, scriptsDir: string, scriptFile: string) {
+    const linkedDir = path.join(pluginHome, "plugins", "linked", pluginName);
+    fs.mkdirSync(linkedDir, { recursive: true });
+
+    fs.writeFileSync(
+      path.join(linkedDir, "saicmotor.plugin.json"),
+      JSON.stringify({
+        name: `@saicmotor/${pluginName}`,
+        engine: "^0.8.0",
+        catalog: [],
+        skills: [],
+        scripts: scriptsDir,
+      }),
+    );
+
+    const scriptDir = path.join(linkedDir, scriptsDir, "leave", "applications");
+    fs.mkdirSync(scriptDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(scriptDir, scriptFile),
+      'module.exports = async function(ctx) { return { ok: true, data: { from: "plugin-script", dryRun: ctx.dryRun } }; };',
+    );
+  }
+
+  it("finds .js in manifest.scripts directory (dev-link, compiled .js present)", () => {
+    setupPlugin("plugin-leave", "scripts", "submit.js");
+    const found = findScript("leave", "applications", "submit");
+    expect(found).not.toBeNull();
+    expect(found!).toContain("scripts");
+  });
+
+  it("finds .js in dist/<manifest.scripts> directory (registry install form)", () => {
+    setupPlugin("plugin-leave", "scripts", "submit.js");
+    // 把 .js 从 scripts/ 挪到 dist/scripts/ 模拟 registry 安装形态
+    const distScripts = path.join(pluginHome, "plugins", "linked", "plugin-leave", "dist", "scripts", "leave", "applications");
+    fs.mkdirSync(distScripts, { recursive: true });
+    fs.writeFileSync(
+      path.join(distScripts, "submit.js"),
+      'module.exports = async function(ctx) { return { ok: true, data: { from: "dist-script" } }; };',
+    );
+    // 删掉 scripts/ 下的 .js，只剩 dist/scripts/
+    fs.rmSync(path.join(pluginHome, "plugins", "linked", "plugin-leave", "scripts", "leave", "applications", "submit.js"));
+
+    const found = findScript("leave", "applications", "submit");
+    expect(found).not.toBeNull();
+    expect(found!).toContain("dist");
+  });
+
+  it("returns null when neither scripts/ nor dist/scripts/ has .js", () => {
+    setupPlugin("plugin-leave", "scripts", "submit.ts");
+    // 插件目录下只有 .ts 源码，没有 .js —— dev 下未编译场景
+    expect(findScript("leave", "applications", "submit")).toBeNull();
   });
 });

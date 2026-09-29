@@ -53,8 +53,11 @@ export function findScript(serviceName: string, resourceName: string, methodName
     const { plugins } = loadPlugins(loadConfig());
     for (const plugin of plugins) {
       if (plugin.manifest.scripts) {
-        const pluginScript = path.join(plugin.rootDir, plugin.manifest.scripts, `${rel}.js`);
-        if (fs.existsSync(pluginScript)) return pluginScript;
+        const pluginScript = firstExisting([
+          path.join(plugin.rootDir, plugin.manifest.scripts, `${rel}.js`),
+          path.join(plugin.rootDir, "dist", plugin.manifest.scripts, `${rel}.js`),
+        ]);
+        if (pluginScript) return pluginScript;
       }
     }
   } catch {
