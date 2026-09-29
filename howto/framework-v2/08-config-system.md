@@ -175,7 +175,7 @@ flowchart LR
 | `token.json` | 缓存的认证 token | 600 |
 | `plugins/node_modules/` | npm 安装的插件包 | — |
 | `plugins/linked/` | dev link 的插件 junction | — |
-| `plugins/state.json` | 插件启用/禁用状态 | 644 |
+| `plugins/state.json` | 插件启用/禁用状态 | 600 |
 
 ---
 

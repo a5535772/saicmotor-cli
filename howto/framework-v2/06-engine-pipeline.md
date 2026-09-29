@@ -52,7 +52,7 @@ flowchart TD
     S11 -->|"是"| S12["clearToken → ensureToken(force=true) → 重试一次"]
     S12 --> S10
     S11 -->|"否"| S13["⑪ checkEnvelope<br/>status < 400 && body.code === 0"]
-    S13 -->|"失败"| ERR["抛 SaicmotorError"]
+    S13 -->|"status ≥ 400 或 Number(body.code) ≠ 0"| ERR["抛 SaicmotorError"]
     S4 --> OUT["⑫ 三格式输出"]
     S6 --> OUT
     S13 --> OUT
@@ -139,8 +139,9 @@ fetch(input.url, { method, headers, body, signal, redirect: "manual" })
 
 ```typescript
 // engine/run.ts:21-29
-if (resp.status >= 400) → SaicmotorError("upstream", ...)  // exit code 5
-if (body.code !== 0)    → SaicmotorError("upstream", ...)  // exit code 5
+if (resp.status >= 400) → SaicmotorError("upstream", ...)          // exit code 5
+if (Number(body.code) !== 0) → SaicmotorError("upstream", ...)  // exit code 5
+//         ↑ Number() 包装，防止服务端返回字符串 "0" 时误判
 ```
 
 ---

@@ -51,7 +51,7 @@ flowchart TB
 
 **职责**：用 JSON 声明 API 接口结构。
 
-每个 catalog JSON 经 `zod` 校验（`ServiceSchema.parse(raw)`），不合法直接抛 `spec` 错误（退出码 6）。
+每个 catalog JSON 经 `zod` 校验（`ServiceSchema.safeParse(raw)`），不合法记 warning 并跳过（不阻断 CLI 启动）。
 
 ### 层 3：执行层（Engine）
 
