@@ -102,9 +102,9 @@ install → (enabled) → disable → enable → uninstall
 | 命令 | 行为 |
 |------|------|
 | `plugin install <name>` | npm install → node_modules → 读 manifest → registerPluginSkills → saveState → writeSuiteRoutes |
-| `plugin uninstall <name>` | unregisterPluginSkills → writeSuiteRoutes → npm uninstall → saveState |
-| `plugin enable <name>` | state.enabled = true → registerPluginSkills → writeSuiteRoutes → saveState |
-| `plugin disable <name>` | state.enabled = false → unregisterPluginSkills → writeSuiteRoutes → saveState |
+| `plugin uninstall <name>` | unregisterPluginSkills → npm uninstall → saveState → writeSuiteRoutes |
+| `plugin enable <name>` | state.enabled = true → saveState → registerPluginSkills → writeSuiteRoutes |
+| `plugin disable <name>` | state.enabled = false → saveState → unregisterPluginSkills → writeSuiteRoutes |
 | `plugin upgrade <name>` | npm update → reload |
 | `plugin list [--json]` | loadPlugins() 双根扫描（linked + node_modules） |
 
@@ -131,8 +131,7 @@ install → (enabled) → disable → enable → uninstall
       "enabled": true,
       "source": "registry",
       "skills": ["skills/saicmotor-leave"],
-      "routes": { "请假": "saicmotor-leave", "休假": "saicmotor-leave", "leave": "saicmotor-leave" },
-      "linkedPath": "C:\\path\\to\\plugin-leave"
+      "routes": { "请假": "saicmotor-leave", "休假": "saicmotor-leave", "leave": "saicmotor-leave" }
     }
   }
 }

@@ -123,7 +123,7 @@ sequenceDiagram
     participant SVC as 业务系统
     U->>C: saicmotor leave applications submit --yes
     C->>C: coerceFields + ensureToken
-    C->>GW: POST /api/leave/applications (Bearer token)
+    C->>GW: POST /leave/applications (Bearer token)
     GW->>SVC: 转发业务请求
     SVC-->>GW: 响应
     GW-->>C: { code: 0, data: {...} }

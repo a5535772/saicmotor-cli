@@ -42,7 +42,7 @@ sequenceDiagram
     C->>U: 打开浏览器
     U->>FS: 完成授权
     FS-->>GW: 授权回调
-    GW-->>C: localhost:3000/callback?code=xxx
+    GW-->>C: 127.0.0.1:3000/callback?code=xxx
     C->>GW: POST /auth/exchange (code)
     GW-->>C: token
     C->>C: 缓存到 ~/.saicmotor/token.json

@@ -121,7 +121,7 @@ interface ScriptContext {
 }
 ```
 
-脚本自行完成 HTTP 调用（Node ≥ 20 内置 `fetch`），引擎不再介入 HTTP 管线。
+脚本自行完成 HTTP 调用（Node ≥ 18 内置 `fetch`），引擎不再介入 HTTP 管线。
 
 ## 输出格式
 
