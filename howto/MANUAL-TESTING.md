@@ -11,7 +11,7 @@
 
 - Node.js ≥ 20
 - Docker Desktop（启动 Verdaccio 本地 npm registry）
-- Java 17 + Maven（启动 mock-server）
+- Java 17（Maven Wrapper 已内置，无需全局安装 mvn）
 - 从公司内部代码库获取以下仓库（本指南不包含它们的链接，请从内部 Git 平台自行检出）：
   - **saicmotor-cli** — CLI 主仓库（本指南所在仓库）
   - **saicmotor-cli-mock-gateway** — 模拟网关（Spring Boot，端口 8081）
@@ -243,6 +243,7 @@ saicmotor plugin install leave --registry=http://localhost:4873
 >
 > **预期**：`✓ @saicmotor/plugin-leave 安装完成，1 个 skills 已注册`
 
+# 验证 --json 输出模式
 ```powershell
 saicmotor plugin install leave --json --registry=http://localhost:4873
 ```
@@ -324,6 +325,13 @@ saicmotor plugin uninstall user --json
 
 > **预期**：`user` 插件卸载。`plugin list` 不再包含它。
 
+```powershell
+# 重装 user 以供后续阶段验证
+saicmotor plugin install user --registry=http://localhost:4873
+```
+
+> **预期**：`user` 插件恢复，`plugin list` 重新包含它。
+
 **截图位：➌ 插件生命周期（install → list → disable → enable → uninstall）**
 
 ---
@@ -349,7 +357,7 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.saicmotor"
 saicmotor auth login
 ```
 
-> **说明**：默认 exchange 模式，CLI 会启动本地回调服务器（端口 3000），弹出浏览器访问飞书授权页。首次可能需要手动启动浏览器或根据终端提示操作。
+> **说明**：默认 exchange 模式，CLI 会启动本地回调服务器（端口 3000），弹出浏览器访问飞书授权页。mock-gateway 内置了 exchange 流程的完整支持（`/auth/exchange/start` + `/auth/exchange`），无需额外配置。确保端口 3000 未被占用。首次可能需要手动启动浏览器或根据终端提示操作。
 >
 > **预期**：浏览器弹出 → 完成授权 → 终端显示 `已登录，token 已缓存（…）`。
 
@@ -611,6 +619,7 @@ rm -r -Force C:\temp\saicmotor-test
 ```powershell
 saicmotor plugin uninstall leave --json
 saicmotor plugin uninstall attendance --json
+saicmotor plugin uninstall user --json
 ```
 
 > **预期**：各自返回卸载成功的 JSON。
@@ -630,7 +639,7 @@ saicmotor uninstall
 ```
 
 > **预期**：
-> - `✓ 已清除 N 个 saicmotor skills`（N ≥ 1，清除 suite + shared skill）
+> - `✓ 已清除 N 个 saicmotor skills`（N = 2，清除 suite + shared skill）
 > - `✓ 已删除本地数据 <home>\.saicmotor`
 > - npm 输出卸载日志
 > - `卸载完成。验证：saicmotor --version 应不可用；各 AI 客户端 skills 目录应无 saicmotor-* 条目`
@@ -695,7 +704,7 @@ Test-Path "$env:USERPROFILE\.saicmotor"
 | 2.4 | `--help` 出现 leave/attendance | | |
 | 2.5 | `disable` → leave 命令消失 | | ➌ |
 | 2.6 | `enable` → leave 命令恢复 | | |
-| 2.8 | `uninstall user` → list 确认 | | |
+| 2.8 | `uninstall user` → 确认 → 重装恢复 | | |
 | 3.2 | 飞书 OAuth 登录成功 | | |
 | 3.3 | 三种格式查询正常 | | ➍ |
 | 3.4 | 请假：dry-run → 拒 → 提交 | | ➍ |
