@@ -4,6 +4,11 @@ import path from "node:path";
 import os from "node:os";
 import { unregisterAllSkills, AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
 import { uninstall } from "../../src/install/uninstall";
+import { execSync } from "node:child_process";
+
+vi.mock("node:child_process", () => ({
+  execSync: vi.fn(),
+}));
 
 const origDirs: Record<string, string> = { ...AI_CLIENT_SKILL_DIRS };
 
@@ -119,5 +124,18 @@ describe("uninstall", () => {
   it("is idempotent (second call does not throw)", () => {
     uninstall({ selfRemove: false });
     expect(() => uninstall({ selfRemove: false })).not.toThrow();
+  });
+
+  it("prints manual command when npm self-remove fails", () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(execSync).mockImplementationOnce(() => {
+      throw new Error("EBUSY");
+    });
+
+    uninstall(); // selfRemove 默认 true，走 execSync
+
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringContaining("npm uninstall -g @saicmotor/cli")
+    );
   });
 });

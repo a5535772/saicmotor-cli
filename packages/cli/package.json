@@ -13,10 +13,12 @@
     "skills/**/*.md",
     "catalog/**/*.json",
     "scripts/run.js",
+    "scripts/uninstall.js",
     "saicmotor.config.json"
   ],
   "scripts": {
     "prepublishOnly": "npm run build && npm test",
+    "preuninstall": "node scripts/uninstall.js",
     "build": "tsc -p tsconfig.json",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "test": "vitest run",

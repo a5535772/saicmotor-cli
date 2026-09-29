@@ -10,6 +10,7 @@ import { registerPluginCommands } from "./plugin-cmds";
 import { registerToolingCommands } from "./tooling-cmds";
 import { handleError } from "./error";
 import { installSkills } from "../install/skills";
+import { uninstall } from "../install/uninstall";
 
 const program = new Command();
 program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.8.0");
@@ -69,6 +70,13 @@ program
   .option("--force", "强制重新安装（即使已安装）")
   .action((opts) => {
     installSkills({ force: opts.force || false });
+  });
+
+program
+  .command("uninstall")
+  .description("卸载 saicmotor：清除全部 skills 与本地数据，并自删 npm 全局包")
+  .action(() => {
+    uninstall();
   });
 
 registerPluginCommands(program);
