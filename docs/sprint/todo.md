@@ -9,42 +9,8 @@
 
 | # | 事项 | 类型 | 优先级 | 状态 |
 |---|------|------|:------:|:----:|
-| 3 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#3-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [ ] |
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 | 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
-| 13 | [脚本覆盖失效：findScript 与插件 manifest.scripts 目录错位](#13-bug-脚本覆盖失效findscript-与插件-manifestscripts-目录错位) | Bug | 🔴 高 | [ ] |
-
----
-
-## [ ] 3. 安装/卸载知识零文档化：一个 HTTP 安装指引 + 一个 uninstall skill
-
-**提出时间**：2026-09-22
-**优先级**：🟡 中（与事项 2 可合并设计：卸载环节即由 uninstall skill 承担）
-**背景**：目前让 AI 完成安装/卸载，需要用户指定本地文档（"读 howto/INSTALL.md"），依赖 AI 能访问仓库文件、会话恰好在项目目录。目标形态是用户**不指定任何文档**：
-
-**目标交互**
-
-1. **安装**：用户只说一句话——
-
-   > "请你参考 <一个 HTTP 地址> 帮我完成 saicmotor CLI 的安装。"
-
-   AI 自行 WebFetch 该地址，按页面上的指引（含 npm 命令、`--dangerously-allow-all-scripts`、代理 env、安装验证）完成安装。
-
-2. **卸载**：安装完成后，skills 中包含一个 **uninstall skill**（如新增 `saicmotor-uninstall`，或并入 `saicmotor-shared` 能力）。用户只需说"帮我卸载 saicmotor CLI"，AI 发现该 skill → 按其说明执行：清除四个业务 skills + uninstall skill 自身 + 本地数据 + 客户端死链接（与事项 1 的清理内容一致），最后引导/执行 `npm uninstall -g`。
-
-**需求要点**：
-
-- [ ] 确定 HTTP 安装指引的承载地址（GitHub raw 文件 / GitHub Pages / 内网页面，与 [[npm-registry-publish-strategy]] 的最终发布形态一致；页面内容单一、无废话，AI 抓取即可执行）
-- [ ] 安装指引内容：一条 npm install 命令、代理环境说明、安装后验证（`--version` + `skills ls -g`）、失败补注册命令
-- [ ] 新增 uninstall skill：`SKILL.md` frontmatter（description 要能被"卸载/删除/清理 saicmotor"意图命中），正文给出完整清理步骤
-- [ ] 自卸载顺序问题：先清理其他 skills 和数据，最后删 npm 包（包删了 skill 文件即消失）；文档说明每步失败的降级处理
-- [ ] skills 注册清单同步增加 uninstall skill（postinstall / `installSkills` 的 `--all` 会自动带上，确认 catalog/skills 目录结构）
-- [ ] 更新手册 07：阶段 2 与阶段 6 的话术改为"参考 <HTTP 地址>"/"用卸载 skill"，不再引用本地 INSTALL.md
-- [ ] 补测试 + 端到端验证：干净环境一句话安装 → 新会话一句话卸载 → 零残留
-
-**验收标准**：人全程不出现"文档""SKILL.md""howto"等字眼，仅凭 HTTP 地址（安装）和 skill 自主发现（卸载）完成闭环。
-
-**部分完成**（2026-09-29）：HTTP 安装指引已由 `howto/FOR-AI-INSTALL.md` 覆盖——AI 可通过 WebFetch 获取安装步骤。卸载已由 `saicmotor uninstall` 命令 + `saicmotor-shared` skill 中的卸载指引覆盖，uninstall skill 的独立需求已退化。
 
 ---
 
@@ -95,31 +61,3 @@ npm publish → prepublishOnly: "npm run build && npm test"
 - 方案 B：workspaces 声明里把 sdk 放在第一位（利用 npm 拓扑排序），只保留 `npm run build --workspaces`
 
 **验收标准**：`npm run build` 输出中 `@saicmotor/sdk` 只出现一次。
----
-
-## [ ] 13. [BUG] 脚本覆盖失效：findScript 与插件 manifest.scripts 目录错位
-
-**提出时间**：2026-09-29（文档质量审查 PD-2 发现并经源码核实）
-**优先级**：🔴 高（插件脚本覆盖功能实际不可用）
-**类型**：Bug（引擎与参考插件配置错位）
-
-**现象**：插件的 script 覆盖从未生效。`findScript()`（`src/engine/script.ts:40-69`）对插件只在 `<插件根>/<manifest.scripts>/<svc>/<res>/<method>.js` 查找 `.js` 文件，但三个参考插件（leave/attendance/user）的 manifest 均声明 `"scripts": "scripts"`——该目录下只有 `.ts` 源码，编译产物在 `dist/scripts/`。
-
-**根因链路**：
-```
-plugin-leave/saicmotor.plugin.json  "scripts": "scripts"
-  → scripts/leave/applications/submit.ts   （.ts 源码）
-  → tsc 编译 → dist/scripts/leave/applications/submit.js （产物位置）
-  → findScript 只查 <插件根>/scripts/.../*.js （查 .js，不扫 dist/）
-  → 返回 null → 走 HTTP 直连管线，脚本覆盖被静默跳过
-```
-
-**实证**：dev link 真实 plugin-leave 后 `findScript('leave','applications','submit')` 返回 null；registry 安装形态（files 字段只含 `dist/**/*.js`，不含 `scripts/`）同样返回 null。测试全绿是因为走 `SAICMOTOR_SCRIPTS` 环境变量覆盖路径（第 1 优先级）验证脚本逻辑，掩盖了插件路径从未被命中。
-
-**修复方向**（二选一）：
-- **方案 A（改引擎，推荐）**：`findScript` 增加对插件 `dist/scripts` 的查找（如 `<插件根>/dist/scripts/<svc>/<res>/<method>.js` 作为第 2.5 优先级），参考插件无需改动 manifest
-- **方案 B（改插件配置）**：参考插件 manifest 改为 `"scripts": "dist/scripts"`，同时 files 字段确认含产物（现有 `dist/**/*.js` 已覆盖）；需同步文档 §5.2
-
-**关联文档**：`howto/PLUGIN-DEVELOPER.md` §5.2/§8.3/§10 已按「manifest 声明 `dist/scripts`」的可工作配置改写并注明此缺陷；`docs/framework/05-engine.md` 脚本查找优先级章节描述的是引擎现状（准确），两文档口径一致。
-
-**验收标准**：`saicmotor dev` 后执行 `saicmotor leave applications submit --dry-run` 命中脚本（输出 `[script] 请假申请前校验通过`），修复需补回归测试（不经 `SAICMOTOR_SCRIPTS` 覆盖路径）。

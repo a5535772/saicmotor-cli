@@ -15,7 +15,9 @@
 | 6 | [网关内置飞书 App Secret（硬编码）——生产前改为密钥注入](#6-安全债网关内置飞书-app-secret硬编码生产前必须改为密钥注入) | 安全/技术债 | 🟡 中 | [x] |
 | 9 | [plugin disable 只禁命令未清 skill/suite](#9-bug-plugin-disable-只禁命令未清-skillsuite) | Bug | 🔴 高 | [x] |
 | 10 | [PowerShell Get-Content 显示 SKILL.md 中文乱码](#10-bug-powershell-get-content-显示-skillmd-中文乱码) | Bug | 🟢 低 | [x] |
+| 3 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#3-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [x] |
 | 11 | [手册中 `saicmotor install` 与 `plugin install` 职责混淆](#11-文档手册中-saicmotor-install-与-plugin-install-职责混淆) | 文档 | 🟢 低 | [x] |
+| 13 | [脚本覆盖失效：findScript 与插件 manifest.scripts 目录错位](#13-bug-脚本覆盖失效findscript-与插件-manifestscripts-目录错位) | Bug | 🔴 高 | [x] |
 
 ---
 
@@ -201,3 +203,32 @@ Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
 | AI Agent | `howto/FOR-AI-INSTALL.md` | ✅ 新建 |
 
 框架 6 章：01-architecture / 02-plugin-system / 03-skills-registration / 04-auth / 05-engine / 06-build-publish，全部经源码事实核查（章节内容与 v0.8.0 源码逐一对照），每章含 mermaid 图 + ASCII 图（图文并茂要求）。
+
+---
+
+## [x] 3. [功能] 安装/卸载知识零文档化：一个 HTTP 安装指引 + 一个 uninstall skill
+
+**提出时间**：2026-09-22
+**优先级**：🟡 中
+**完成记录**（2026-09-29）：
+
+- **安装**：`howto/FOR-AI-INSTALL.md` 提供纯 HTTP 安装指引，AI 通过 WebFetch 抓取即可执行安装（npm install + saicmotor install + 验证 + 排查）
+- **卸载**：`saicmotor uninstall` 命令（一键清除 skills + 本地数据 + 自删 npm 包）+ `saicmotor-shared` skill 中含卸载指引，AI 发现 skill 即可执行卸载
+- **闭环验证**：用户只需说"安装 saicmotor"或"卸载 saicmotor"，AI 自主完成，全程不出现"文档""SKILL.md""howto"等指令
+
+---
+
+## [x] 13. [BUG] 脚本覆盖失效：findScript 与插件 manifest.scripts 目录错位
+
+**提出时间**：2026-09-29
+**优先级**：🔴 高
+**类型**：Bug（引擎与参考插件配置错位）
+**完成记录**（2026-09-29）：
+
+- **根因**：`findScript()` 对插件只查 `<plugin-root>/<manifest.scripts>/.../*.js`，但三个参考插件 manifest `"scripts": "scripts"` 下只有 `.ts` 源码，编译产物在 `dist/scripts/`。registry 安装形态 `files` 也不含 `scripts/`。脚本覆盖功能从上线起从未实际生效。
+- **为什么测试全绿**：`script.test.ts` 所有 Case 都设了 `SAICMOTOR_SCRIPTS` 环境变量覆盖路径（优先级 1），绕过了插件路径（优先级 2）。
+- **为什么人工验证没发现**：找不到脚本时引擎静默 fallback 到 HTTP 直连，mock-server 返回正确数据，命令照样成功，仅 `console.error("[script] ...")` 不打印。
+- **修复**：`packages/cli/src/engine/script.ts:57` 增加 `<plugin-root>/dist/<manifest.scripts>/.../*.js` 查找，同时覆盖 dev-link（tsc 产出）和 registry install（`dist/**/*.js`）两种形态。
+- **测试**：新增 3 个回归 Case，全不设 `SAICMOTOR_SCRIPTS`，直接验证插件路径命中。
+
+Commit: `c7a58ef`
