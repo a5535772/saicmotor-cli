@@ -12,6 +12,7 @@
 | 3 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#3-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [ ] |
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 | 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
+| 13 | [脚本覆盖失效：findScript 与插件 manifest.scripts 目录错位](#13-bug-脚本覆盖失效findscript-与插件-manifestscripts-目录错位) | Bug | 🔴 高 | [ ] |
 
 ---
 
@@ -94,3 +95,31 @@ npm publish → prepublishOnly: "npm run build && npm test"
 - 方案 B：workspaces 声明里把 sdk 放在第一位（利用 npm 拓扑排序），只保留 `npm run build --workspaces`
 
 **验收标准**：`npm run build` 输出中 `@saicmotor/sdk` 只出现一次。
+---
+
+## [ ] 13. [BUG] 脚本覆盖失效：findScript 与插件 manifest.scripts 目录错位
+
+**提出时间**：2026-09-29（文档质量审查 PD-2 发现并经源码核实）
+**优先级**：🔴 高（插件脚本覆盖功能实际不可用）
+**类型**：Bug（引擎与参考插件配置错位）
+
+**现象**：插件的 script 覆盖从未生效。`findScript()`（`src/engine/script.ts:40-69`）对插件只在 `<插件根>/<manifest.scripts>/<svc>/<res>/<method>.js` 查找 `.js` 文件，但三个参考插件（leave/attendance/user）的 manifest 均声明 `"scripts": "scripts"`——该目录下只有 `.ts` 源码，编译产物在 `dist/scripts/`。
+
+**根因链路**：
+```
+plugin-leave/saicmotor.plugin.json  "scripts": "scripts"
+  → scripts/leave/applications/submit.ts   （.ts 源码）
+  → tsc 编译 → dist/scripts/leave/applications/submit.js （产物位置）
+  → findScript 只查 <插件根>/scripts/.../*.js （查 .js，不扫 dist/）
+  → 返回 null → 走 HTTP 直连管线，脚本覆盖被静默跳过
+```
+
+**实证**：dev link 真实 plugin-leave 后 `findScript('leave','applications','submit')` 返回 null；registry 安装形态（files 字段只含 `dist/**/*.js`，不含 `scripts/`）同样返回 null。测试全绿是因为走 `SAICMOTOR_SCRIPTS` 环境变量覆盖路径（第 1 优先级）验证脚本逻辑，掩盖了插件路径从未被命中。
+
+**修复方向**（二选一）：
+- **方案 A（改引擎，推荐）**：`findScript` 增加对插件 `dist/scripts` 的查找（如 `<插件根>/dist/scripts/<svc>/<res>/<method>.js` 作为第 2.5 优先级），参考插件无需改动 manifest
+- **方案 B（改插件配置）**：参考插件 manifest 改为 `"scripts": "dist/scripts"`，同时 files 字段确认含产物（现有 `dist/**/*.js` 已覆盖）；需同步文档 §5.2
+
+**关联文档**：`howto/PLUGIN-DEVELOPER.md` §5.2/§8.3/§10 已按「manifest 声明 `dist/scripts`」的可工作配置改写并注明此缺陷；`docs/framework/05-engine.md` 脚本查找优先级章节描述的是引擎现状（准确），两文档口径一致。
+
+**验收标准**：`saicmotor dev` 后执行 `saicmotor leave applications submit --dry-run` 命中脚本（输出 `[script] 请假申请前校验通过`），修复需补回归测试（不经 `SAICMOTOR_SCRIPTS` 覆盖路径）。

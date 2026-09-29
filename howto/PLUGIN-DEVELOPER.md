@@ -50,10 +50,10 @@ plugin-<name>/
 ├── skills/
 │   └── saicmotor-<name>/
 │       └── SKILL.md          # AI Agent 方向盘
-├── scripts/                  # 自定义脚本（可选，声明式覆盖不到时才加）
+├── scripts/                  # 自定义脚本源码（可选，声明式覆盖不到时才加）
 │   └── <service>/
 │       └── <resource>/
-│           └── <method>.ts   # 与 catalog JSON 树形对应
+│           └── <method>.ts   # 与 catalog JSON 树形对应，编译产物在 dist/scripts/
 ├── src/                      # 源码（如果需要辅助逻辑）
 └── test/                     # 测试
 ```
@@ -65,7 +65,7 @@ plugin-<name>/
 | `saicmotor.plugin.json` | CLI 引擎（加载时读） | ✅ |
 | `catalog/services/*.json` | CLI 引擎（动态注册命令） | ✅ |
 | `skills/*/SKILL.md` | AI Agent（发现 + 编排） | ✅ |
-| `scripts/**/*.ts` | CLI 引擎（script 覆盖 HTTP 回放） | ❌（必要时才加） |
+| `scripts/**/*.ts` | CLI 引擎（编译后按 manifest.scripts 查找 `.js`，见 §5.2） | ❌（必要时才加） |
 | manifest 中的 `routes` 字段 | CLI 引擎（suite 路由聚合） | ❌（无路由需求可不写） |
 
 ```text
@@ -74,6 +74,8 @@ plugin-<name>/
 create plugin ──→ 编辑 catalog + SKILL.md ──→ dev 联调 ──→ validate ──→ publish
   生成骨架          声明 API + AI 手册       linked/ 加载   zod 校验    内部 registry
 ```
+
+> §3 快速开始的编号步骤是上述 5 步的展开（cd + npm install 是环境准备，不单独计步）。
 
 ---
 
@@ -225,11 +227,29 @@ catalog/services/my-system.json
   → name: "my-system"
   → resources.items.methods.submit
 
-对应脚本路径：
+对应脚本源码路径：
 scripts/my-system/items/submit.ts
+编译产物（引擎实际查找）：
+dist/scripts/my-system/items/submit.js
 ```
 
-规则：`scripts/<service名>/<resource名>/<method名>.ts`
+规则：源码放 `scripts/<service名>/<resource名>/<method名>.ts`，`tsc` 编译后在 `dist/scripts/` 下产出同名 `.js`。
+
+**引擎查找路径**（`src/engine/script.ts` 的 `findScript`）按以下顺序找 `.js` 文件：
+
+```
+1. $SAICMOTOR_SCRIPTS/<svc>/<res>/<method>.{js,ts}    ← 测试/定制覆盖
+2. <插件根>/<manifest.scripts>/<svc>/<res>/<method>.js  ← 插件贡献（★ 唯一插件入口）
+3. CLI 包 dist/scripts/<svc>/<res>/<method>.js         ← 内核脚本
+```
+
+> **关键**：`manifest.scripts` 指向的目录里必须是**编译后的 `.js`**（引擎不认 `.ts`，也不扫描插件 `dist/` 默认位置）。因此 manifest 应声明编译产物目录：
+
+```json
+{ "scripts": "dist/scripts" }
+```
+
+> **已知引擎缺陷**（todo 已登记）：当前三个参考插件（leave/attendance/user）manifest 声明 `"scripts": "scripts"` 指向 `.ts` 源码目录，其脚本覆盖实际从未生效（测试用 `SAICMOTOR_SCRIPTS` 覆盖路径验证逻辑，掩盖了该问题）。修复前，新插件按上文「`dist/scripts`」方式声明即可正常工作。
 
 ### 5.3 脚本中使用 @saicmotor/sdk
 
@@ -273,10 +293,10 @@ saicmotor validate .
 ```
 
 校验内容：
-- `saicmotor.plugin.json` 格式是否正确
-- manifest `name` 是否以 `@saicmotor/plugin-` 开头
-- `engine` 字段是否存在且为有效 semver range
-- catalog JSON 文件是否存在且可解析
+- `saicmotor.plugin.json` 存在且 JSON 可解析
+- manifest 字段类型符合 zod schema（`name`/`engine` 为非空字符串、`catalog`/`skills` 为字符串数组、`routes` 为字符串映射等）
+
+> **范围注**：`name` 前缀（`@saicmotor/plugin-`）、`engine` semver 有效性、catalog 文件存在性**不在校验范围内**——这些问题会在插件加载期以别的方式暴露（如命令不注册、加载警告）。发现此类问题时先对照「10. 排障」。
 
 ```bash
 # 通过
@@ -305,12 +325,16 @@ saicmotor validate .
 `saicmotor.plugin.json` 中的 `engine` 字段声明插件兼容的核心版本范围：
 
 ```json
-{ "engine": "^0.8.0" }   // 兼容 0.8.x（推荐）
-{ "engine": ">=0.8.0" }  // 兼容 0.8 及以后所有版本
-{ "engine": "~0.8.0" }   // 仅兼容 0.8.x 补丁版
+{
+  "engine": "^0.8.0",
+  "engine-alt-gte": ">=0.8.0",
+  "engine-alt-tilde": "~0.8.0"
+}
 ```
 
-安装时 CLI 检查 `CORE_VERSION` 是否满足插件的 `engine` range。不兼容的插件被禁用并打印警告。
+含义：`^0.8.0` 兼容 0.8.x；`>=0.8.0` 兼容 0.8 及以后所有版本；`~0.8.0` 仅兼容 0.8.x 补丁版。同级的三个键仅示意不同 range 写法，实际 manifest 只写一个 `engine` 字段。
+
+每次命令执行时（插件加载期）CLI 检查 `CORE_VERSION` 是否满足插件的 `engine` range。不兼容的插件被禁用并打印警告。
 
 ### 8.3 发布流程
 
@@ -339,10 +363,10 @@ SKILL.md 是 AI Agent 的操作手册。Agent 读取它来决定**什么时候�
 
 ### 9.1 格式要求
 
-```markdown
+````markdown
 ---
 name: saicmotor-my-system
-version: 1.0.0
+version: 0.1.0
 description: "业务系统的简要说明（AI Agent 用它判断意图）"
 metadata:
   requires:
@@ -397,7 +421,7 @@ saicmotor my-system items list --format json     # JSON（默认）
 saicmotor my-system items list --format table    # 表格
 saicmotor my-system items list --format pretty   # 美化
 ```
-```
+````
 
 ### 9.2 Frontmatter 必填字段
 
@@ -407,6 +431,8 @@ saicmotor my-system items list --format pretty   # 美化
 | `version` | 跟随插件版本号 |
 | `description` | AI Agent 用它做意图匹配——写清楚"本 skill 管什么、不管什么" |
 | `metadata.requires.bins` | 必须含 `["saicmotor"]` |
+
+> **脚手架用户注意**：`saicmotor create plugin` 生成的 SKILL.md 只含 `name` + `description` 最小骨架，需按本表补齐 `version` 与 `metadata.requires.bins` 后再发布。
 
 ### 9.3 写作要点
 
@@ -448,11 +474,19 @@ saicmotor validate .
 
 ### 脚本没有被执行
 
-脚本期望编译后的 `.js` 文件。确认：
+引擎按 `manifest.scripts` 指定的目录查找**编译后的 `.js`**（见 §5.2 查找顺序）。确认：
 
 ```bash
-npm run build                            # 编译 ts → js
-ls dist/scripts/<service>/<resource>/<method>.js  # 确认产物存在
+# 1. 编译并确认产物存在
+npm run build
+ls dist/scripts/<service>/<resource>/<method>.js
+
+# 2. manifest.scripts 指向产物目录（不是 .ts 源码目录）
+#    "scripts": "dist/scripts"   ← ✅ 引擎可查到
+#    "scripts": "scripts"        ← ❌ 源码是 .ts，引擎不认
+
+# 3. 已发布的包：package.json files 字段须含产物目录
+#    "files": [..., "dist/**/*.js"]
 ```
 
 ---
@@ -473,8 +507,9 @@ ls dist/scripts/<service>/<resource>/<method>.js  # 确认产物存在
   // skill 目录列表，每项对应 skills/<name>/SKILL.md
   "skills": ["skills/saicmotor-xxx"],
 
-  // scripts 根目录（可选，有 script 覆盖时才需要）
-  "scripts": "scripts",
+  // scripts 根目录（可选，有 script 覆盖时才需要）——须指向编译产物目录（.js），
+  // 如 tsc outDir 为 dist 时声明 "dist/scripts"（见 §5.2）
+  "scripts": "dist/scripts",
 
   // 意图路由（可选，声明后会出现在 saicmotor-suite 的路由表中）
   "routes": {
