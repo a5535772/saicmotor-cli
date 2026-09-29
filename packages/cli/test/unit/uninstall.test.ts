@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { unregisterAllSkills, AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
+import { uninstall } from "../../src/install/uninstall";
 
 const origDirs: Record<string, string> = { ...AI_CLIENT_SKILL_DIRS };
 
@@ -74,5 +75,49 @@ describe("unregisterAllSkills", () => {
       second = unregisterAllSkills();
     }).not.toThrow();
     expect(second).toEqual([]);
+  });
+});
+
+describe("uninstall", () => {
+  const origHome = process.env.SAICMOTOR_HOME;
+  let tmpHome: string;
+  let tmpClient: string;
+
+  beforeEach(() => {
+    tmpHome = path.join(os.tmpdir(), `saicmotor-uninstall-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    process.env.SAICMOTOR_HOME = tmpHome;
+    fs.mkdirSync(tmpHome, { recursive: true });
+    fs.writeFileSync(path.join(tmpHome, "config.json"), "{}", "utf8");
+
+    tmpClient = path.join(os.tmpdir(), `saicmotor-uninstall-client-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    for (const k of Object.keys(AI_CLIENT_SKILL_DIRS)) {
+      AI_CLIENT_SKILL_DIRS[k] = path.join(tmpClient, k, "skills");
+      fs.mkdirSync(AI_CLIENT_SKILL_DIRS[k], { recursive: true });
+      fs.mkdirSync(path.join(AI_CLIENT_SKILL_DIRS[k], "saicmotor-suite"), { recursive: true });
+    }
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    Object.assign(AI_CLIENT_SKILL_DIRS, origDirs);
+    if (origHome === undefined) delete process.env.SAICMOTOR_HOME;
+    else process.env.SAICMOTOR_HOME = origHome;
+    if (fs.existsSync(tmpHome)) fs.rmSync(tmpHome, { recursive: true, force: true });
+    if (fs.existsSync(tmpClient)) fs.rmSync(tmpClient, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("clears skills and local data, respects SAICMOTOR_HOME", () => {
+    uninstall({ selfRemove: false });
+
+    expect(fs.existsSync(tmpHome)).toBe(false);
+    for (const dir of Object.values(AI_CLIENT_SKILL_DIRS)) {
+      expect(fs.existsSync(path.join(dir as string, "saicmotor-suite"))).toBe(false);
+    }
+  });
+
+  it("is idempotent (second call does not throw)", () => {
+    uninstall({ selfRemove: false });
+    expect(() => uninstall({ selfRemove: false })).not.toThrow();
   });
 });
