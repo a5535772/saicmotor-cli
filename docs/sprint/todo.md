@@ -12,7 +12,6 @@
 | 3 | [安装/卸载知识零文档化：HTTP 安装指引 + uninstall skill](#3-安装卸载知识零文档化一个-http-安装指引--一个-uninstall-skill) | 功能 | 🟡 中 | [ ] |
 | 7 | [npm publish 时 prepublishOnly → test 触发 exchange 认证弹浏览器](#7-bug-npm-publish-时-prepublishonly--test-触发-exchange-认证弹浏览器) | Bug | 🟡 中 | [ ] |
 | 8 | [根 build SDK 编译两次](#8-构建优化根-build-时-sdk-编译两次) | 优化 | 🟢 低 | [ ] |
-| 12 | [文档体系重构：框架开发者/业务开发者/架构全景三类手册 + 开发工具](#12-文档体系重构框架开发者业务开发者架构全景三类手册--开发工具) | 文档 | 🟡 中 | [ ] |
 
 ---
 
@@ -43,6 +42,8 @@
 - [ ] 补测试 + 端到端验证：干净环境一句话安装 → 新会话一句话卸载 → 零残留
 
 **验收标准**：人全程不出现"文档""SKILL.md""howto"等字眼，仅凭 HTTP 地址（安装）和 skill 自主发现（卸载）完成闭环。
+
+**部分完成**（2026-09-29）：HTTP 安装指引已由 `howto/FOR-AI-INSTALL.md` 覆盖——AI 可通过 WebFetch 获取安装步骤。卸载已由 `saicmotor uninstall` 命令 + `saicmotor-shared` skill 中的卸载指引覆盖，uninstall skill 的独立需求已退化。
 
 ---
 
@@ -93,35 +94,3 @@ npm publish → prepublishOnly: "npm run build && npm test"
 - 方案 B：workspaces 声明里把 sdk 放在第一位（利用 npm 拓扑排序），只保留 `npm run build --workspaces`
 
 **验收标准**：`npm run build` 输出中 `@saicmotor/sdk` 只出现一次。
-
----
-
-## [ ] 12. [文档] 文档体系重构：框架开发者/业务开发者/架构全景三类手册 + 开发工具
-
-**提出时间**：2026-09-26
-**优先级**：🟡 中
-**类型**：文档
-**背景**：现有文档散落各处（ARCHITECTURE.2.0.md、DEVELOPER.md、INSTALL.md、sprint 验证手册），读者找不到自己要的信息，也不清楚"我是谁该读哪篇"。
-
-**目标产出**：
-
-| 文档 | 目标读者 | 内容 |
-|------|----------|------|
-| **框架开发者手册** | 维护/扩展 CLI 核心的人 | monorepo 结构、构建/发布流程、插件 loader/registrar/suite 机制、CLI 认证流程、测试策略、npm registry 发布机制 |
-| **业务开发者手册** | 写业务插件的人（leave/attendance/user） | 插件工程脚手架（`create plugin`）、manifest 规范、catalog 定义、skills 编写、dev 联调、validate 校验、发布上线 |
-| **业务开发工具** | 业务开发者 | `create plugin` / `validate` / `dev` 的详细用法、常见场景、错误排查；最好有 CLI 内置 wizard 或模板生成能力 |
-| **架构全景文档** | 所有人（含非开发决策者） | 项目主体架构、周边架构（mock-gateway/mock-services）、npm 注册与分发机制、AI 阅读机制（skill → suite 路由 → CLI 命令链）、CLI 认证机制（password/exchange/飞书 SSO）、数据流全景 |
-
-**架构全景需覆盖的主题**：
-- 项目主体架构：monorepo workspaces、包依赖拓扑（sdk → cli → plugins）
-- npm 注册机制：Verdaccio/npm registry → `@saicmotor/cli` + 插件包发布、`--registry` flag、scoped registry 配置
-- CLI 分发机制：`npm install -g` / `npx @saicmotor/cli@latest` 双路径、postinstall skills 注册（含 npm v11 限制）
-- AI 阅读机制：`saicmotor-suite` skill → 路由表 → 业务 skill（`saicmotor-leave`等）→ AI 拼出 CLI 命令 → 用户确认 → 执行
-- CLI 认证机制：password / exchange（飞书 OAuth）双协议、token 缓存、`ensureToken()` 拦截器
-- 周边架构：mock-gateway（飞书 SSO 回调 + 反向代理）、mock-services（业务 mock 数据）
-- 插件生命周期：双根扫描（linked/ + installed/）、engine 校验、enable/disable、install/uninstall/upgrade
-
-**实施建议**：
-- 先讨论确定架构全景文档的结构（太大会没人读，太小不够全）——建议用"一张总图 + 分章深入"模式
-- 框架/业务开发者手册可与现有 DEVELOPER.md / sprint 验证手册内容合并重构
-- 开发工具可优先考虑 CLI 内置（`saicmotor create plugin --help` 已经很详细）、手册作为补充

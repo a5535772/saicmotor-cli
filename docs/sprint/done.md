@@ -183,3 +183,21 @@ Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md"
 - 手册 4.4 移除多余的 `saicmotor install --force`
 - S8 能力速览表 `skills 注册` 说明改为"注册内核 skills；插件 skills 由 `plugin install` 自动注册"
 - 手册 4.1 和 4.3 的说明文字此前已修正
+
+---
+
+## [x] 12. [文档] 文档体系重构
+
+**提出时间**：2026-09-26
+**优先级**：🟡 中
+**完成记录**（2026-09-29）：按 5 类用户重构全文档体系：
+
+| 用户 | 文档 | 状态 |
+|------|------|:---:|
+| 使用者 | `howto/USER-GUIDE.md` | ✅ 新建 |
+| 业务开发者 | `howto/PLUGIN-DEVELOPER.md` | ✅ 新建（基于归档 `docs/history/DEVELOPER.md` 更新至 v0.8.0） |
+| 测试人员 | `howto/MANUAL-TESTING.md` | ✅ 此前已完成 |
+| 框架开发人员 | `docs/framework/`（6 章） | ✅ 新建 |
+| AI Agent | `howto/FOR-AI-INSTALL.md` | ✅ 新建 |
+
+框架 6 章：01-architecture / 02-plugin-system / 03-skills-registration / 04-auth / 05-engine / 06-build-publish，全部经源码事实核查（章节内容与 v0.8.0 源码逐一对照），每章含 mermaid 图 + ASCII 图（图文并茂要求）。
