@@ -18,6 +18,12 @@ function firstExisting(files: string[]): string | null {
   return null;
 }
 
+/** 校验 candidate 是否仍在 base 目录内，阻断 `..` 路径穿越 */
+function within(base: string, candidate: string): boolean {
+  const rel = path.relative(path.resolve(base), path.resolve(candidate));
+  return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+}
+
 /**
  * 脚本查找顺序：
  * 1. SAICMOTOR_SCRIPTS 显式覆盖（测试/定制）：<dir>/<svc>/<res>/<method>.{js,ts}
@@ -29,10 +35,11 @@ export function findScript(serviceName: string, resourceName: string, methodName
   const rel = path.join(serviceName, resourceName, methodName);
 
   if (process.env.SAICMOTOR_SCRIPTS) {
-    const override = firstExisting([
-      path.join(process.env.SAICMOTOR_SCRIPTS, `${rel}.js`),
-      path.join(process.env.SAICMOTOR_SCRIPTS, `${rel}.ts`),
-    ]);
+    const base = process.env.SAICMOTOR_SCRIPTS;
+    const candidates = [path.join(base, `${rel}.js`), path.join(base, `${rel}.ts`)].filter((candidate) =>
+      within(base, candidate),
+    );
+    const override = firstExisting(candidates);
     if (override) return override;
   }
 
@@ -41,10 +48,14 @@ export function findScript(serviceName: string, resourceName: string, methodName
     const { plugins } = loadPlugins(loadConfig());
     for (const plugin of plugins) {
       if (plugin.manifest.scripts) {
-        const pluginScript = firstExisting([
-          path.join(plugin.rootDir, plugin.manifest.scripts, `${rel}.js`),
-          path.join(plugin.rootDir, "dist", plugin.manifest.scripts, `${rel}.js`),
-        ]);
+        const bases = [
+          path.join(plugin.rootDir, plugin.manifest.scripts),
+          path.join(plugin.rootDir, "dist", plugin.manifest.scripts),
+        ];
+        const candidates = bases
+          .map((base) => path.join(base, `${rel}.js`))
+          .filter((candidate, index) => within(bases[index], candidate));
+        const pluginScript = firstExisting(candidates);
         if (pluginScript) return pluginScript;
       }
     }
@@ -52,11 +63,13 @@ export function findScript(serviceName: string, resourceName: string, methodName
     // 插件不可用时静默跳过
   }
 
-  const compiled = path.join(distRoot(), "scripts", `${rel}.js`);
-  if (fs.existsSync(compiled)) return compiled;
+  const compiledBase = path.join(distRoot(), "scripts");
+  const compiled = path.join(compiledBase, `${rel}.js`);
+  if (within(compiledBase, compiled) && fs.existsSync(compiled)) return compiled;
 
-  const source = packageFile(path.join("scripts", `${rel}.ts`));
-  return fs.existsSync(source) ? source : null;
+  const sourceBase = packageFile("scripts");
+  const source = path.join(sourceBase, `${rel}.ts`);
+  return within(sourceBase, source) && fs.existsSync(source) ? source : null;
 }
 
 export async function executeScript(file: string, ctx: ScriptContext): Promise<RunResult> {

@@ -108,6 +108,22 @@ describe("script scheduling", () => {
     expect((result.data as any).dryRun).toBe(true);
     expect((result.data as any).token).toBe("string");
   });
+
+  it("findScript rejects path traversal (../ escapes scripts base)", () => {
+    const dir = path.join(tmp, "attendance", "corrections");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "submit.ts"), "export default async function(){}");
+    // 在 base 外写一个同名文件，若围栏失效会被命中：未围栏候选为 tmp/../<esc>/submit.ts
+    const esc = `evil-${path.basename(tmp)}`;
+    const outsideDir = path.join(tmp, "..", esc);
+    fs.mkdirSync(outsideDir, { recursive: true });
+    fs.writeFileSync(path.join(outsideDir, "submit.ts"), "export default async function(){}");
+    try {
+      expect(findScript("..", esc, "submit")).toBeNull();
+    } finally {
+      fs.rmSync(outsideDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("findScript via plugin dist/scripts (no SAICMOTOR_SCRIPTS)", () => {
