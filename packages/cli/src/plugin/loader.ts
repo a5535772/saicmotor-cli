@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import semver from "semver";
 import { PluginManifestSchema, type PluginManifest } from "@saicmotor/sdk";
-import { ServiceSchema, type Service } from "../schema/catalog";
+import { ServiceSchema, type Service } from "@saicmotor/sdk";
 import type { Config } from "../config";
 import { installedPluginsDir, linkedPluginsDir } from "./paths";
 import { loadState, type PluginStateEntry } from "./state";

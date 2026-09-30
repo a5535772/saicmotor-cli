@@ -1,5 +1,5 @@
 import type { Config } from "../config";
-import type { Method, Field } from "../schema/catalog";
+import type { Method, Field } from "@saicmotor/sdk";
 import { SaicmotorError } from "./errors";
 
 export function buildUrl(config: Config, servicePath: string, method: Method): string {

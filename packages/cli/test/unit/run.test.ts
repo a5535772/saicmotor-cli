@@ -6,7 +6,7 @@ import { runMethod } from "../../src/engine/run";
 import { loadConfig } from "../../src/config";
 import { writeCredentials, writeToken } from "../../src/auth/store";
 import { startServer, MockServer } from "../helpers/server";
-import type { Service, Method } from "../../src/schema/catalog";
+import type { Service, Method } from "@saicmotor/sdk";
 
 const service: Service = {
   name: "leave", servicePath: "/leave",

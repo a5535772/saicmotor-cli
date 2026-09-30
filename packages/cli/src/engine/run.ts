@@ -1,5 +1,5 @@
 import type { Config } from "../config";
-import type { Service, Method } from "../schema/catalog";
+import type { Service, Method } from "@saicmotor/sdk";
 import { SaicmotorError } from "./errors";
 import { send, type HttpResponse } from "./http";
 import { ensureToken } from "../auth/session";

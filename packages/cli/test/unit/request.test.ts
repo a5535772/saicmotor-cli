@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { coerceFields, buildBody, buildUrl } from "../../src/engine/request";
 import { loadConfig } from "../../src/config";
-import type { Method } from "../../src/schema/catalog";
+import type { Method } from "@saicmotor/sdk";
 
 const config = { ...loadConfig(), gateway: "http://gw" };
 

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ServiceSchema, type Service } from "../schema/catalog";
+import { ServiceSchema, type Service } from "@saicmotor/sdk";
 import { catalogDir } from "../config";
 
 export function loadCatalog(): { services: Service[]; warnings: string[] } {

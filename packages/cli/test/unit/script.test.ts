@@ -8,7 +8,7 @@ import { runMethod } from "../../src/engine/run";
 import { loadConfig } from "../../src/config";
 import { writeCredentials } from "../../src/auth/store";
 import { startServer, MockServer } from "../helpers/server";
-import type { Service } from "../../src/schema/catalog";
+import type { Service } from "@saicmotor/sdk";
 import { loadPlugins, type LoadedPlugin } from "../../src/plugin/loader";
 
 const service: Service = {

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Config } from "../config";
 import { loadConfig } from "../config";
-import type { Service, Method } from "../schema/catalog";
+import type { Service, Method } from "@saicmotor/sdk";
 import type { RunResult } from "./run";
 import { SaicmotorError } from "./errors";
 import { distRoot, packageFile } from "../pkg-root";
