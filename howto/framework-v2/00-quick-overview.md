@@ -64,7 +64,7 @@ saicmotor leave balance query   →   Commander 解析命令
 终端输出 JSON/Table/Pretty      ←   stdout
 ```
 
-## 系统的五个关键角色
+## 系统的六个关键角色
 
 | 角色 | 是什么 | 类比 |
 |------|--------|------|
@@ -74,6 +74,7 @@ saicmotor leave balance query   →   Commander 解析命令
 | **CLI 引擎** | @saicmotor/cli 核心 | 执行者——拼 URL、发 HTTP、处理认证、格式化输出 |
 | **SDK** | @saicmotor/sdk 共享类型包 | 类型契约——CLI 和插件共享同一份 zod schema、错误类、类型定义 |
 | **插件** | 独立 npm 包（plugin-*） | 功能模块——业务系统以独立包分发，不碰核心代码 |
+| **SDK** | @saicmotor/sdk 纯类型包 | 类型字典——插件开发者写脚本时获得类型提示和 zod 校验 |
 
 ## 三层开发者模型
 

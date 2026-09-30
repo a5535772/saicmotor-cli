@@ -215,6 +215,6 @@ flowchart TB
 
 ## 下一步
 
-- [02 系统架构](./02-architecture.md) — 深入四层架构 + 包拓扑
+- [02 系统架构](./02-architecture.md) — 深入五层架构（含 SDK 跨切层） + 包拓扑
 - 想看安装全流程？→ [03 安装全流程](./03-installation-flow.md)
 - 想开发插件？→ [10 插件开发指南](./10-plugin-development.md)

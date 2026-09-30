@@ -249,6 +249,7 @@ ls ~/.saicmotor                       # → 目录不存在
 1. 只需改编排层（Skills）+ 声明层（Catalog）。不需要改执行层（Engine）和插件层（Plugin System）
 2. CLI → SDK：runtime dependency（直接 import SaicmotorError、Config 等值）；插件 → SDK：取决于用法——仅类型注解放 devDependencies，脚本中 import `SaicmotorError` 等运行值必须放 dependencies
 3. Commander 解析 → coerceFields → findScript → ensureToken → send → checkEnvelope → 格式化输出
+4. `ServiceSchema.parse()` 校验失败 → warning（不崩溃），通过 `loadPluginServices` 返回 `{ services, warnings }`；校验通过 → 类型安全的 Service 对象 → Commander 命令注册
 
 ### 03 安装全流程
 

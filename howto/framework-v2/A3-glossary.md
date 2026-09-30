@@ -30,10 +30,10 @@
 
 | 术语 | 英文 | 定义 |
 |------|------|------|
-| **编排层** | Orchestration Layer | 四层架构最上层——Skills。告诉 AI Agent "我能做什么"。 |
-| **声明层** | Declaration Layer | 四层架构第二层——Catalog JSON。声明 API 接口结构。 |
-| **执行层** | Execution Layer | 四层架构第三层——Engine。执行 HTTP 请求 + 格式化输出。 |
-| **插件层** | Plugin Layer | 四层架构最下层——Plugin System。插件加载、生命周期、Skills 注册。 |
+| **编排层** | Orchestration Layer | 框架四层垂直架构的最上层（另有一个横向的 SDK 类型层贯穿各层）——Skills。告诉 AI Agent "我能做什么"。 |
+| **声明层** | Declaration Layer | 框架四层垂直架构的第二层（另有一个横向的 SDK 类型层贯穿各层）——Catalog JSON。声明 API 接口结构。 |
+| **执行层** | Execution Layer | 框架四层垂直架构的第三层（另有一个横向的 SDK 类型层贯穿各层）——Engine。执行 HTTP 请求 + 格式化输出。 |
+| **插件层** | Plugin Layer | 框架四层垂直架构的最下层（另有一个横向的 SDK 类型层贯穿各层）——Plugin System。插件加载、生命周期、Skills 注册。 |
 | **Monorepo** | Monorepo | 单仓库多包管理——saicmotor-cli 使用 npm workspaces 管理 5 个 npm 包。 |
 | **SDK** | SDK | `@saicmotor/sdk`——类型定义 + zod schema + 错误类的共享包。SaicmotorError、ServiceSchema、Config 等均由 SDK 导出。 |
 
