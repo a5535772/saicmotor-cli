@@ -3,7 +3,6 @@ import path from "node:path";
 import semver from "semver";
 import { PluginManifestSchema, type PluginManifest } from "@saicmotor/sdk";
 import { ServiceSchema, type Service } from "@saicmotor/sdk";
-import type { Config } from "../config";
 import { installedPluginsDir, linkedPluginsDir } from "./paths";
 import { loadState, type PluginStateEntry } from "./state";
 import { findPackageRoot } from "../pkg-root";
@@ -73,7 +72,7 @@ const CORE_VERSION = readCoreVersion();
  * 双根扫描并加载所有兼容插件。
  * 不做全局副作用（不写 state，不注册 skills）。
  */
-export function loadPlugins(_config: Config): LoadResult {
+export function loadPlugins(): LoadResult {
   const warnings: string[] = [];
   const loaded: LoadedPlugin[] = [];
   const state = loadState();

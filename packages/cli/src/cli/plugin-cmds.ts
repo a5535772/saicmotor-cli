@@ -5,7 +5,6 @@ import path from "node:path";
 import { loadState, saveState } from "../plugin/state";
 import { installedPluginsDir, pluginsDir } from "../plugin/paths";
 import { loadPlugins } from "../plugin/loader";
-import { loadConfig } from "../config";
 import * as registrar from "../plugin/registrar";
 
 // ── 工具函数 ──
@@ -323,7 +322,7 @@ export function registerPluginCommands(program: Command): void {
     .description("列出已安装插件")
     .option("--json", "JSON 输出")
     .action((opts: { json?: boolean }) => {
-      const { plugins, warnings } = loadPlugins(loadConfig());
+      const { plugins, warnings } = loadPlugins();
       const list = plugins.map((p) => ({
         name: p.manifest.name,
         version: p.entry.version,

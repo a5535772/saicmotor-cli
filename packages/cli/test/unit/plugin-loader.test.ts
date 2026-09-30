@@ -48,10 +48,6 @@ function setupLinkedPluginDir(
   }
 }
 
-function makeTestConfig() {
-  return { gateway: "http://localhost:8081", auth: { type: "password" as const, loginPath: "/auth/login", tokenPath: "data.token", tokenHeader: "Authorization", tokenPrefix: "Bearer", startPath: "/auth/exchange/start", exchangePath: "/auth/exchange", loopbackHost: "127.0.0.1", loopbackPort: 3000, callbackTimeoutMs: 120000 } };
-}
-
 describe("plugin loader", () => {
   beforeEach(() => {
     process.env.SAICMOTOR_HOME = tmpBase;
@@ -69,7 +65,7 @@ describe("plugin loader", () => {
 
   it("loads no plugins when directory is empty", () => {
     fs.mkdirSync(path.join(tmpBase, "plugins", "node_modules"), { recursive: true });
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(0);
     expect(result.warnings).toHaveLength(0);
   });
@@ -92,7 +88,7 @@ describe("plugin loader", () => {
         },
       },
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].manifest.name).toBe("@saicmotor/plugin-test");
     expect(result.plugins[0].services).toHaveLength(1);
@@ -101,7 +97,7 @@ describe("plugin loader", () => {
 
   it("warns when engine is incompatible", () => {
     setupPluginDir("plugin-old", { name: "@saicmotor/plugin-old", engine: ">=2.0.0" });
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(0);
     expect(result.warnings.some((w: string) => w.includes("不兼容"))).toBe(true);
   });
@@ -109,7 +105,7 @@ describe("plugin loader", () => {
   it("warns when manifest is missing", () => {
     const p = path.join(tmpBase, "plugins", "node_modules", "plugin-noman");
     fs.mkdirSync(p, { recursive: true });
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.warnings.some((w: string) => w.includes("缺少 saicmotor.plugin.json"))).toBe(true);
   });
 
@@ -117,13 +113,13 @@ describe("plugin loader", () => {
     const p = path.join(tmpBase, "plugins", "node_modules", "plugin-badjson");
     fs.mkdirSync(p, { recursive: true });
     fs.writeFileSync(path.join(p, "saicmotor.plugin.json"), "not json {{{");
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.warnings.some((w: string) => w.includes("manifest 解析失败"))).toBe(true);
   });
 
   it("skips invalid manifest schema (missing name)", () => {
     setupPluginDir("plugin-noname", { engine: ">=0.4.0" });
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     // Invalid manifest means it's skipped with a parse failure warning
     expect(result.warnings.some((w: string) => w.includes("manifest 解析失败"))).toBe(true);
     expect(result.plugins).toHaveLength(0);
@@ -147,7 +143,7 @@ describe("plugin loader", () => {
         },
       },
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].manifest.name).toBe("@saicmotor/plugin-dev");
     expect(result.plugins[0].entry.source).toBe("linked");
@@ -179,7 +175,7 @@ describe("plugin loader", () => {
       process.platform === "win32" ? "junction" : "dir",
     );
 
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].manifest.name).toBe("@saicmotor/plugin-reimbursement");
     expect(result.plugins[0].entry.source).toBe("linked");
@@ -197,7 +193,7 @@ describe("plugin loader", () => {
       "plugin-override",
       { name: "@saicmotor/plugin-override", engine: ">=0.4.0", skills: ["dev-skill"] },
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].entry.source).toBe("linked");
     expect(result.plugins[0].entry.skills).toContain("dev-skill");
@@ -227,7 +223,7 @@ describe("plugin loader", () => {
       { name: "@saicmotor/plugin-beta", engine: ">=0.4.0", catalog: ["catalog/services/*.json"] },
       svcA,
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.warnings.some((w: string) => w.includes("冲突"))).toBe(true);
     // 冲突 warning 点名胜者（先加载，生效）与败者（后加载，未生效），并给出 disable 指引
     const conflictWarning = result.warnings.find((w: string) => w.includes("冲突"))!;
@@ -252,7 +248,7 @@ describe("plugin loader", () => {
       JSON.stringify({ name: "@saicmotor/plugin-random", engine: ">=0.4.0" }),
     );
     // "some-random-lib" does NOT start with "plugin-", so it should be skipped
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(0);
   });
 
@@ -285,7 +281,7 @@ describe("plugin loader", () => {
         },
       },
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].services).toHaveLength(2);
     const names = result.plugins[0].services.map((s) => s.name).sort();
@@ -311,7 +307,7 @@ describe("plugin loader", () => {
         "bad.json": "NOT_JSON{{{{" as any,
       },
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].services).toHaveLength(1);
     expect(result.plugins[0].services[0].name).toBe("good");
@@ -327,7 +323,7 @@ describe("plugin loader", () => {
       "plugin-alpha",
       { name: "@saicmotor/plugin-alpha", engine: ">=0.4.0" },
     );
-    const result = loadPlugins(makeTestConfig());
+    const result = loadPlugins();
     expect(result.plugins).toHaveLength(2);
     expect(result.plugins[0].manifest.name).toBe("@saicmotor/plugin-alpha");
     expect(result.plugins[1].manifest.name).toBe("@saicmotor/plugin-zeta");

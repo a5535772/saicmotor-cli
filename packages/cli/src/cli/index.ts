@@ -19,7 +19,7 @@ const config = loadConfig();
 
 // 加载核心 catalog + 插件 catalog
 const { services: coreServices, warnings: catalogWarnings } = loadCatalog();
-const { plugins, warnings: pluginWarnings } = loadPlugins(config);
+const { plugins, warnings: pluginWarnings } = loadPlugins();
 const warnings = [...catalogWarnings, ...pluginWarnings];
 const pluginServices = plugins.flatMap((p) => p.services);
 const allServices = [...coreServices, ...pluginServices];

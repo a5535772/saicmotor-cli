@@ -1,9 +1,8 @@
 import { loadPlugins, type LoadedPlugin } from "./loader";
-import { loadConfig } from "../config";
 
 /** 聚合所有已启用插件的 routes 为 suite 路由表 */
 export function buildSuiteRoutes(plugins?: LoadedPlugin[]): Record<string, string> {
-  const list = plugins ?? loadPlugins(loadConfig()).plugins;
+  const list = plugins ?? loadPlugins().plugins;
   const routes: Record<string, string> = {};
 
   for (const plugin of list) {

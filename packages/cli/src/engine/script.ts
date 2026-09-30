@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadConfig } from "../config";
 import type { Service, Method, ScriptContext, ScriptFn, RunResult } from "@saicmotor/sdk";
 import { SaicmotorError } from "@saicmotor/sdk";
 import { distRoot, packageFile } from "../pkg-root";
@@ -45,7 +44,7 @@ export function findScript(serviceName: string, resourceName: string, methodName
 
   // 插件 scripts 目录（延迟加载，避免潜在的循环依赖）
   try {
-    const { plugins } = loadPlugins(loadConfig());
+    const { plugins } = loadPlugins();
     for (const plugin of plugins) {
       if (plugin.manifest.scripts) {
         const bases = [
