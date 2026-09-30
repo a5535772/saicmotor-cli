@@ -25,6 +25,7 @@ function loadPackageConfig(): { defaults?: { gateway?: string } } {
   try {
     return JSON.parse(fs.readFileSync(packageFile("saicmotor.config.json"), "utf8"));
   } catch {
+    // 包内 saicmotor.config.json 缺失/损坏时回退空配置，不阻断启动
     return {};
   }
 }

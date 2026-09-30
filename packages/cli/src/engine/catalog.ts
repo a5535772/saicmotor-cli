@@ -9,6 +9,7 @@ export function loadCatalog(): { services: Service[]; warnings: string[] } {
   try {
     files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
   } catch {
+    // 核心 catalog 目录读取失败回退空列表 + 空 warning，不阻断启动
     return { services: [], warnings: [] };
   }
   const services: Service[] = [];

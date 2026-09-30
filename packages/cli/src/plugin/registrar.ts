@@ -138,6 +138,7 @@ export function unregisterAllSkills(): string[] {
     try {
       entries = fs.readdirSync(clientSkillsDir);
     } catch {
+      // 客户端 skills 目录读取失败跳过该客户端，不阻断卸载
       continue;
     }
 

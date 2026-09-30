@@ -17,6 +17,7 @@ function scanEntries(root: string): Array<[string, string]> {
   const result: Array<[string, string]> = [];
   let entries: fs.Dirent[];
   try { entries = fs.readdirSync(root, { withFileTypes: true }); }
+  // 插件根目录不存在/不可读时返回空候选，不阻断扫描
   catch { return result; }
 
   for (const e of entries) {
@@ -31,6 +32,7 @@ function scanEntries(root: string): Array<[string, string]> {
       const scopeDir = path.join(root, e.name);
       let scopeEntries: fs.Dirent[];
       try { scopeEntries = fs.readdirSync(scopeDir, { withFileTypes: true }); }
+      // scoped 目录读取失败跳过该 scope，不阻断扫描
       catch { continue; }
       for (const se of scopeEntries) {
         if ((se.isDirectory() || se.isSymbolicLink()) && se.name.startsWith("plugin-")) {
@@ -62,6 +64,7 @@ function readCoreVersion(): string {
     const pkg = JSON.parse(fs.readFileSync(path.join(findPackageRoot(), "package.json"), "utf8"));
     return pkg.version ?? "0.0.0";
   } catch {
+    // package.json 读取失败回退版本 "0.0.0"，engine 校验自会兜底
     return "0.0.0";
   }
 }
@@ -176,6 +179,7 @@ function loadPluginServices(pkgRoot: string, manifest: PluginManifest): { servic
 
     let files: string[];
     try { files = fs.readdirSync(servicesDir).filter((f) => f.endsWith(".json")); }
+    // catalog/services 目录读取失败跳过，不阻断其他插件
     catch { continue; }
 
     for (const file of files) {

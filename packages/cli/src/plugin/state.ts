@@ -21,6 +21,7 @@ export function loadState(): PluginState {
     const raw = fs.readFileSync(stateFilePath(), "utf8");
     return JSON.parse(raw);
   } catch {
+    // state.json 缺失/损坏时回退空插件表，是有意降级——文件损坏不阻断 CLI 启动（代价是已装插件列表看似清空，属可接受）
     return { plugins: {} };
   }
 }

@@ -136,6 +136,7 @@ export function uninstallPluginLogic(name: string): PluginUninstallResult {
       stdio: "pipe",
     });
   } catch {
+    // npm 卸载失败不阻断 state 清理，结果附 error 字段提示手动卸载
     npmUninstallFailed = true;
   }
 
