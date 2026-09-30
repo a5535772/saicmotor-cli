@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { registerSkill, unregisterSkill, registerPluginSkills, unregisterPluginSkills, writeSuiteRoutes, AI_CLIENT_SKILL_DIRS } from "../../src/plugin/registrar";
 import { loadState, saveState } from "../../src/plugin/state";
+import { getCoreVersion } from "../../src/version";
 
 const tmpSkill = path.join(os.tmpdir(), `saicmotor-test-skill-${Date.now()}`);
 const tmpClient = path.join(os.tmpdir(), `saicmotor-test-client-${Date.now()}`);
@@ -90,7 +91,7 @@ describe("registerPluginSkills", () => {
     const state = loadState();
     state.plugins["@saicmotor/plugin-test"] = {
       name: "@saicmotor/plugin-test",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: true,
       source: "registry",
       skills: ["skills/saicmotor-test"],
@@ -191,7 +192,7 @@ describe("writeSuiteRoutes", () => {
       path.join(pkgDir, "saicmotor.plugin.json"),
       JSON.stringify({
         name: "@saicmotor/plugin-r",
-        engine: "^0.8.0",
+        engine: `^${getCoreVersion()}`,
         routes: { 报销: "saicmotor-reimbursement" },
       }),
     );

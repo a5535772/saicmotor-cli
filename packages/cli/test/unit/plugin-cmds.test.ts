@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { getCoreVersion } from "../../src/version";
 
 // Mock execSync — must use vi.hoisted to avoid hoisting issues
 const { execSyncMock } = vi.hoisted(() => ({ execSyncMock: vi.fn() }));
@@ -109,7 +110,7 @@ describe("setPluginEnabledLogic", () => {
     const state = loadState();
     state.plugins["@saicmotor/plugin-leave"] = {
       name: "@saicmotor/plugin-leave",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: true,
       source: "registry",
       skills: ["skills/saicmotor-leave"],
@@ -221,7 +222,7 @@ describe("installPluginLogic", () => {
       const pluginsDir = path.join(tmpBase, "plugins");
       const pkgDir = path.join(pluginsDir, "node_modules", "@saicmotor/plugin-leave");
       fs.mkdirSync(pkgDir, { recursive: true });
-      fs.writeFileSync(path.join(pkgDir, "package.json"), JSON.stringify({ name: "@saicmotor/plugin-leave", version: "0.8.0" }));
+      fs.writeFileSync(path.join(pkgDir, "package.json"), JSON.stringify({ name: "@saicmotor/plugin-leave", version: getCoreVersion() }));
       return "";
     });
     const result = installPluginLogic("leave", { registry: "http://localhost:4873" });
@@ -236,15 +237,15 @@ describe("installPluginLogic", () => {
       setupPluginFiles(pkgDir, ["skills/saicmotor-leave"]);
       fs.writeFileSync(
         path.join(pkgDir, "saicmotor.plugin.json"),
-        JSON.stringify({ name: "@saicmotor/plugin-leave", engine: "^0.8.0", skills: ["skills/saicmotor-leave"], routes: { "请假": "saicmotor-leave" } }),
+        JSON.stringify({ name: "@saicmotor/plugin-leave", engine: `^${getCoreVersion()}`, skills: ["skills/saicmotor-leave"], routes: { "请假": "saicmotor-leave" } }),
       );
-      fs.writeFileSync(path.join(pkgDir, "package.json"), JSON.stringify({ name: "@saicmotor/plugin-leave", version: "0.8.0" }));
+      fs.writeFileSync(path.join(pkgDir, "package.json"), JSON.stringify({ name: "@saicmotor/plugin-leave", version: getCoreVersion() }));
       return "";
     });
     const result = installPluginLogic("leave", { registry: "http://localhost:4873" });
     expect(result.ok).toBe(true);
     expect(result.data!.name).toBe("@saicmotor/plugin-leave");
-    expect(result.data!.version).toBe("0.8.0");
+    expect(result.data!.version).toBe(getCoreVersion());
     expect(result.data!.skills).toContain("saicmotor-leave");
 
     const state = loadState();
@@ -273,7 +274,7 @@ describe("uninstallPluginLogic", () => {
     const state = loadState();
     state.plugins["@saicmotor/plugin-leave"] = {
       name: "@saicmotor/plugin-leave",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: true,
       source: "registry",
       skills: ["skills/saicmotor-leave"],
@@ -360,7 +361,7 @@ describe("upgradePluginLogic", () => {
         path.join(pkgDir, "saicmotor.plugin.json"),
         JSON.stringify({
           name: "@saicmotor/plugin-leave",
-          engine: "^0.8.0",
+          engine: `^${getCoreVersion()}`,
           skills: ["skills/saicmotor-leave"],
           routes: { 请假: "saicmotor-leave" },
         }),
@@ -375,7 +376,7 @@ describe("upgradePluginLogic", () => {
     const before = loadState();
     before.plugins["@saicmotor/plugin-leave"] = {
       name: "@saicmotor/plugin-leave",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: true,
       source: "registry",
       skills: ["skills/saicmotor-leave"],

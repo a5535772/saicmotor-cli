@@ -10,6 +10,7 @@ import { writeCredentials } from "../../src/auth/store";
 import { startServer, MockServer } from "../helpers/server";
 import type { Service } from "@saicmotor/sdk";
 import { loadPlugins, type LoadedPlugin } from "../../src/plugin/loader";
+import { getCoreVersion } from "../../src/version";
 
 const service: Service = {
   name: "attendance",
@@ -149,7 +150,7 @@ describe("findScript via plugin dist/scripts (no SAICMOTOR_SCRIPTS)", () => {
       path.join(linkedDir, "saicmotor.plugin.json"),
       JSON.stringify({
         name: `@saicmotor/${pluginName}`,
-        engine: "^0.8.0",
+        engine: `^${getCoreVersion()}`,
         catalog: [],
         skills: [],
         scripts: scriptsDir,

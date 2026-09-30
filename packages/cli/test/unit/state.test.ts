@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { loadState, saveState } from "../../src/plugin/state";
+import { getCoreVersion } from "../../src/version";
 
 describe("state (load/save)", () => {
   const origHome = process.env.SAICMOTOR_HOME;
@@ -28,7 +29,7 @@ describe("state (load/save)", () => {
     const state = loadState();
     state.plugins["@saicmotor/plugin-leave"] = {
       name: "@saicmotor/plugin-leave",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: true,
       source: "registry",
       skills: ["skills/saicmotor-leave"],
@@ -38,7 +39,7 @@ describe("state (load/save)", () => {
 
     const reloaded = loadState();
     expect(reloaded.plugins["@saicmotor/plugin-leave"].name).toBe("@saicmotor/plugin-leave");
-    expect(reloaded.plugins["@saicmotor/plugin-leave"].version).toBe("0.8.0");
+    expect(reloaded.plugins["@saicmotor/plugin-leave"].version).toBe(getCoreVersion());
     expect(reloaded.plugins["@saicmotor/plugin-leave"].enabled).toBe(true);
     expect(reloaded.plugins["@saicmotor/plugin-leave"].source).toBe("registry");
   });
@@ -47,14 +48,14 @@ describe("state (load/save)", () => {
     const state = loadState();
     state.plugins["@saicmotor/plugin-leave"] = {
       name: "@saicmotor/plugin-leave",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: true,
       source: "registry",
       skills: ["skills/saicmotor-leave"],
     };
     state.plugins["@saicmotor/plugin-attendance"] = {
       name: "@saicmotor/plugin-attendance",
-      version: "0.8.0",
+      version: getCoreVersion(),
       enabled: false,
       source: "registry",
       skills: ["skills/saicmotor-attendance"],
