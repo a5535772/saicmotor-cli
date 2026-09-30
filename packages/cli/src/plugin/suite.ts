@@ -1,4 +1,7 @@
 import { loadPlugins, type LoadedPlugin } from "./loader";
+import { getCoreVersion } from "../version";
+
+const SUITE_VERSION = getCoreVersion();
 
 /** 聚合所有已启用插件的 routes 为 suite 路由表 */
 export function buildSuiteRoutes(plugins?: LoadedPlugin[]): Record<string, string> {
@@ -23,7 +26,7 @@ export function generateSuiteSkill(routes: Record<string, string>): string {
   return [
     "---",
     "name: saicmotor-suite",
-    "version: 0.8.0",
+    `version: ${SUITE_VERSION}`,
     'description: "saicmotor 统一入口 skill——AI Agent 通过此 skill 发现并路由到具体业务能力"',
     "metadata:",
     "  requires:",

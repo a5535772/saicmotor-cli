@@ -11,9 +11,10 @@ import { registerToolingCommands } from "./tooling-cmds";
 import { handleError } from "./error";
 import { installSkills } from "../install/skills";
 import { uninstall } from "../install/uninstall";
+import { getCoreVersion } from "../version";
 
 const program = new Command();
-program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version("0.8.0");
+program.name("saicmotor").description("面向 AI Agent 的企业 CLI 工具平台：skill 编排 + catalog 声明 + 引擎执行").version(getCoreVersion());
 
 const config = loadConfig();
 

@@ -5,7 +5,6 @@ import { PluginManifestSchema, type PluginManifest } from "@saicmotor/sdk";
 import { ServiceSchema, type Service } from "@saicmotor/sdk";
 import { installedPluginsDir, linkedPluginsDir } from "./paths";
 import { loadState, type PluginStateEntry } from "./state";
-import { findPackageRoot } from "../pkg-root";
 
 /**
  * 扫描目录下的插件候选。
@@ -59,17 +58,9 @@ export interface LoadResult {
   warnings: string[];
 }
 
-function readCoreVersion(): string {
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(findPackageRoot(), "package.json"), "utf8"));
-    return pkg.version ?? "0.0.0";
-  } catch {
-    // package.json 读取失败回退版本 "0.0.0"，engine 校验自会兜底
-    return "0.0.0";
-  }
-}
+import { getCoreVersion } from "../version";
 
-const CORE_VERSION = readCoreVersion();
+const CORE_VERSION = getCoreVersion();
 
 /**
  * 双根扫描并加载所有兼容插件。

@@ -82,7 +82,7 @@ describe("createPluginLogic", () => {
       fs.readFileSync(path.join(tmpBase, "plugin-reimbursement", "saicmotor.plugin.json"), "utf8"),
     );
     expect(manifest.name).toBe("@saicmotor/plugin-reimbursement");
-    expect(manifest.engine).toBe("^0.8.0");
+    expect(manifest.engine).toBe(">=0.8.0");
     expect(manifest.catalog).toEqual(["catalog/services/*.json"]);
     expect(manifest.skills).toEqual(["skills/saicmotor-reimbursement"]);
     expect(manifest.scripts).toBe("scripts");

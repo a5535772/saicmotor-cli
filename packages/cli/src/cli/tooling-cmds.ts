@@ -5,6 +5,9 @@ import { PluginManifestSchema } from "@saicmotor/sdk";
 import { linkedPluginsDir } from "../plugin/paths";
 import { loadState, saveState } from "../plugin/state";
 import * as registrar from "../plugin/registrar";
+import { getCoreVersion } from "../version";
+
+const CORE_VERSION = getCoreVersion();
 
 // ── 提取的命令逻辑（可测试，无 console 输出）──
 
@@ -44,7 +47,7 @@ export function createPluginLogic(name: string, outputDir?: string): CreatePlugi
     },
     dependencies: { zod: "^3.23.8" },
     devDependencies: {
-      "@saicmotor/sdk": "^0.8.0",
+      "@saicmotor/sdk": `>=${CORE_VERSION}`,
       "@types/node": "^20.14.0",
       typescript: "^5.5.0",
       vitest: "^2.0.0",
@@ -82,7 +85,7 @@ export function createPluginLogic(name: string, outputDir?: string): CreatePlugi
     JSON.stringify(
       {
         name: pkgName,
-        engine: "^0.8.0",
+        engine: `>=${CORE_VERSION}`,
         catalog: ["catalog/services/*.json"],
         skills: [`skills/saicmotor-${name}`],
         scripts: "scripts",
