@@ -181,6 +181,7 @@ interface ScriptContext {
   dryRun: boolean;                             // --dry-run 标志
   ensureToken: () => Promise<string>;          // 引擎注入的 token 获取函数
 }
+```
 
 **脚本的责任边界**：
 - 脚本负责：自己的业务逻辑、HTTP 调用、前置/后置处理

@@ -120,6 +120,8 @@ saicmotor 统一入口 skill。以下为当前已装插件提供的意图路由�
 > 此文件由 saicmotor 注册器自动生成，请勿手动编辑。
 ```
 
+> 上面示例中的 `version: 0.8.0` 仅为当前 CLI 版本的标注快照，并非固定值。实际生成时 `generateSuiteSkill()` 调用 `getCoreVersion()` 动态写入当前 CLI 版本——如果你使用的是 0.9.0，生成的 SKILL.md 会显示 `version: 0.9.0`。不要从示例直接复制版本号。
+
 `version` 字段由 `generateSuiteSkill()` 动态写入——它调用 `getCoreVersion()` 读取 CLI 的 `package.json` 版本，而不是硬编码 `"0.8.0"` 之类的固定值。这意味着 suite SKILL.md 的版本号总是跟随 CLI 版本自动更新，不需要任何手动维护。
 
 **为什么全量重建？** 因为卸载一个插件后，它的路由会自动从表中消失——不需要手动清理。增量追加容易产生"幽灵路由"（插件卸载了但路由还在）。
