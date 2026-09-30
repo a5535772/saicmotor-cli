@@ -1,4 +1,4 @@
-export { PluginManifestSchema, validateManifest, definePlugin } from "./manifest";
+export { PluginManifestSchema, validateManifest } from "./manifest";
 export type { PluginManifest } from "./manifest";
 export type { ScriptContext, ScriptFn, RunResult } from "./context";
 export type { Config } from "./config-types";

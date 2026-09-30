@@ -24,8 +24,3 @@ export type PluginManifest = z.infer<typeof PluginManifestSchema>;
 export function validateManifest(raw: unknown): PluginManifest {
   return PluginManifestSchema.parse(raw);
 }
-
-/** 类型安全的 manifest 构造助手 */
-export function definePlugin(m: PluginManifest): PluginManifest {
-  return PluginManifestSchema.parse(m);
-}

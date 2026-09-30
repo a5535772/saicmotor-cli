@@ -35,7 +35,6 @@ import type {
 import {
   PluginManifestSchema,  // manifest 的 Zod schema（用于校验）
   validateManifest,      // 校验 manifest 对象，抛 ZodError 或返回 parsed
-  definePlugin,          // 类型安全的 manifest 构造助手
 } from "@saicmotor/sdk";
 ```
 
@@ -43,19 +42,7 @@ import {
 
 ## 写 manifest
 
-```ts
-// saicmotor.plugin.ts（构建脚本用）
-import { definePlugin } from "@saicmotor/sdk";
-
-export default definePlugin({
-  name: "@saicmotor/plugin-my-system",
-  engine: "^0.8.0",
-  catalog: ["catalog/services/*.json"],
-  skills: ["skills/saicmotor-my-system"],
-  scripts: "scripts",
-  routes: { "我的系统": "saicmotor-my-system" },
-});
-```
+manifest 是 JSON 文件（`saicmotor.plugin.json`），无需 TS 构造助手。
 
 ---
 

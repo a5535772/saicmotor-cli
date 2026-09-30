@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateManifest, definePlugin, PluginManifestSchema } from "../src/manifest";
+import { validateManifest, PluginManifestSchema } from "../src/manifest";
 
 describe("PluginManifestSchema", () => {
   const validManifest = {
@@ -29,16 +29,5 @@ describe("PluginManifestSchema", () => {
 
   it("rejects empty name", () => {
     expect(() => validateManifest({ name: "", engine: "^1.0.0" })).toThrow();
-  });
-
-  it("definePlugin returns validated manifest", () => {
-    const m = definePlugin(validManifest);
-    expect(m.name).toBe("@saicmotor/plugin-test");
-    expect(m.engine).toBe("^1.0.0");
-    expect(m.routes).toEqual({ "查询假期": "saicmotor-leave" });
-  });
-
-  it("definePlugin throws on invalid input", () => {
-    expect(() => definePlugin({ name: "" } as any)).toThrow();
   });
 });
