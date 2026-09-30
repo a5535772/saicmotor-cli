@@ -47,6 +47,8 @@
 ─────────────────────────────────────────────────────────
 saicmotor leave balance query   →   Commander 解析命令
     │                                 ↓
+    │                            loadPlugins()（无参数）自动扫描 linked + node_modules 双根
+    │                                 ↓
     │                            从插件 catalog JSON 找到 leave.balance.query
     │                                 ↓
     │                            检查是否有自定义脚本（没有 → 走 HTTP 直连）
@@ -70,6 +72,7 @@ saicmotor leave balance query   →   Commander 解析命令
 | **Skill** | 一个 SKILL.md 文件 | 秘书的岗位手册——告诉 AI "你能做什么、怎么做" |
 | **Catalog** | 声明式 JSON 文件 | API 说明书——"这个接口叫什么、参数是什么、请求方式" |
 | **CLI 引擎** | @saicmotor/cli 核心 | 执行者——拼 URL、发 HTTP、处理认证、格式化输出 |
+| **SDK** | @saicmotor/sdk 共享类型包 | 类型契约——CLI 和插件共享同一份 zod schema、错误类、类型定义 |
 | **插件** | 独立 npm 包（plugin-*） | 功能模块——业务系统以独立包分发，不碰核心代码 |
 
 ## 三层开发者模型
@@ -104,7 +107,7 @@ saicmotor leave balance query   →   Commander 解析命令
     │       ├── plugin-leave/
     │       ├── plugin-attendance/
     │       └── plugin-user/
-    └── state.json        ← 插件启用/禁用状态
+    └── state.json        ← 插件启用/禁用状态 + 各插件已安装版本
 ```
 
 ## 你能回答这些吗？

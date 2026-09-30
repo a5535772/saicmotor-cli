@@ -103,7 +103,7 @@ saicmotor 做的事                        AI 客户端做的事
 - 用什么 HTTP 方法（`GET`）
 - 需要什么参数（`requestBody` 字段）
 
-**技术本质**：Catalog JSON 的三层嵌套直接映射到 CLI 的三级命令结构：
+**技术本质**：Catalog JSON 的结构由 `@saicmotor/sdk` 中的 `ServiceSchema`（zod schema）定义。CLI 和插件共享同一份校验逻辑——插件编写 catalog 时通过 `ServiceSchema.parse()` 获得类型安全的结构校验，CLI 启动时同样用这份 schema 验证插件的 catalog 文件。这意味着如果 catalog JSON 不符合 schema，CLI 会在启动时就报 warning 而非运行时出错。Catalog JSON 的三层嵌套直接映射到 CLI 的三级命令结构：
 
 ```
 service.name  →  resource.name  →  method.name
@@ -142,7 +142,7 @@ flowchart TD
 4. 检查返回结果（校验）
 5. 格式化输出（呈现）
 
-**技术本质**：引擎是一个无状态的管道（pipeline）——每个请求都走相同的步骤，不缓存中间结果。
+**技术本质**：引擎是一个无状态的管道（pipeline）——每个请求都走相同的步骤，不缓存中间结果。脚本检测阶段使用 `findScript()` 按 SAICMOTOR_SCRIPTS 环境变量、插件 scripts 目录、编译产物、源码树的顺序查找，每一步都经过 `within()` 围栏检查防止 `..` 路径穿越。错误处理通过 `isSaicmotorError()` 做结构判断（检查 `category` 是否为 string 且 `exitCode` 是否为 number），而非 `instanceof`——这是因为 CLI 和插件各有一份独立的 `@saicmotor/sdk` 拷贝，`instanceof` 在跨包场景下会失灵。
 
 ---
 
@@ -158,7 +158,9 @@ flowchart LR
 
 **生活类比**：插件是**功能模块**。核心引擎就像手机的 USB-C 接口——它定义了插拔的规范（manifest + catalog JSON），但不内置任何业务。请假、考勤、报销这些"业务 App"都是插件，想加就加，不用改核心。
 
-**技术本质**：插件是独立的 npm 包（`@saicmotor/plugin-*`），通过 `saicmotor plugin install` 安装到 `~/.saicmotor/plugins/node_modules/`。CLI 启动时扫描并动态加载。
+**技术本质**：插件是独立的 npm 包（`@saicmotor/plugin-*`），通过 `saicmotor plugin install` 安装到 `~/.saicmotor/plugins/node_modules/`。CLI 启动时通过 `loadPlugins()`（无参数，自动扫描 linked + node_modules 双根）动态加载。
+
+**manifest 的 `engine` 字段**：插件的 `saicmotor.plugin.json` 中有一个 `engine` 字段，声明它兼容哪些版本的 CLI 核心。当前 0.x 阶段使用 `>=0.8.0`（开放上界），而非 semver 标准的 `^0.8.0`。这样设计是因为：semver 约定中，0.x 阶段的 `^` 运算符不跨小版本——`^0.8.0` 等价于 `>=0.8.0 <0.9.0`。如果每个插件都用 `^0.8.0`，CLI 从 0.8.0 升级到 0.9.0 时所有插件都会被自动禁用，即使它们完全兼容。使用 `>=0.8.0` 开放上界则避免了这一强制降级，允许插件开发者显式声明自己已验证的最高版本。当 1.0 发布后，router 会切换为 `^1.0.0` 标准约束。
 
 > 💡 **关键理解**：核心 CLI 自身不内置任何业务命令——`saicmotor --help` 在装插件前只显示框架命令（`install`、`plugin`、`auth` 等）。`leave`、`attendance` 等业务命令全是插件贡献的。
 
@@ -182,6 +184,10 @@ flowchart TB
         CATALOG -->|"被加载到"| ENGINE["⚙️ CLI 引擎"]
     end
 
+    subgraph "SDK 类型层"
+        SDK["🧬 @saicmotor/sdk<br/>（zod schema + 类型 + 错误类）"]
+    end
+
     subgraph "执行层面"
         ENGINE -->|"HTTP"| GW["🏭 企业网关"]
         GW -->|"转发"| SVC["业务系统"]
@@ -191,6 +197,10 @@ flowchart TB
         PLUGIN["📦 插件包"] -->|"包含"| CATALOG
         PLUGIN -->|"包含"| SKILL
     end
+
+    CATALOG -->|"校验依据"| SDK
+    PLUGIN -->|"import 类型"| SDK
+    ENGINE -->|"import 类型"| SDK
 ```
 
 ---
