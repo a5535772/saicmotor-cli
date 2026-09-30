@@ -39,7 +39,7 @@ plugin-<name>/                          ← 独立的 npm 包
 ```typescript
 {
   name: string;                          // 必须 "@saicmotor/plugin-*"
-  engine: string;                        // semver range，如 "^0.8.0"
+  engine: string;                        // semver range。当前 0.x 阶段推荐 ">=0.8.0"（开放上界）
   catalog?: string[];                    // catalog glob 列表
   skills?: string[];                     // skills 目录列表
   scripts?: string;                      // scripts 根目录（须指向编译产物 .js 目录）
@@ -58,6 +58,19 @@ plugin-<name>/                          ← 独立的 npm 包
 | `scripts` | 告诉 findScript 去哪儿找自定义脚本覆盖 | 脚本不会被找到 |
 | `routes` | 你声明"我能处理什么意图"，引擎默认不包含你的路由 | suite 路由表中没有你的条目，AI 路由不到你 |
 
+### `engine` 字段的 semver range 选择
+
+当前 0.x 阶段，推荐在 `saicmotor.plugin.json` 中使用 `">=0.8.0"`（开放上界），而不是 `"^0.8.0"`。
+
+```
+推荐： ">=0.8.0"    → 接受 0.8.0 及以上所有版本
+不推荐："^0.8.0"     → 等价于 ≥0.8.0 且 <0.9.0（npm 在 0.x 阶段的语义）
+```
+
+`^0.8.0` 的行为本质是 semver 规则——npm 对 0.x 版本施加了严格的上界约束，`^0.8.0` 仅接受 `>=0.8.0 <0.9.0`。如果 CLI 从 0.8.x 升级到 0.9.x，所有使用 `^0.8.0` 的插件将因 engine 不兼容而被禁用。这个设计失误会导致 CLI 小版本升级后整个插件生态瘫痪。`">=0.8.0"` 通过开放上界规避了这个问题。跳 1.0 后恢复标准 `"^1.0.0"` 即可。
+
+如果新版本 CLI 确实引入了不兼容的 API 变更，你可以使用 `<` 约束精确切断：`">=0.8.0 <0.11.0"`。
+
 > ⚠️ **关于 `scripts` 字段的重要说明**（FAQ #2）：
 >
 > `manifest.scripts` 必须指向**编译后的 `.js` 产物目录**（如 `"dist/scripts"`），不是 `.ts` 源码目录。引擎只查找 `.js` 文件。
@@ -72,7 +85,7 @@ plugin-<name>/                          ← 独立的 npm 包
 
 ```mermaid
 flowchart TD
-    START["loadPlugins(config)"] --> STATE["loadState() 读 state.json"]
+    START["loadPlugins()"] --> STATE["loadState() 读 state.json"]
     STATE --> LOOP{"双根扫描"}
     LOOP -->|"root #1: linked/"| SCAN1["scanEntries → 找 plugin-*"]
     LOOP -->|"root #2: node_modules/"| SCAN2["scanEntries → @saicmotor/ → plugin-*"]
@@ -101,7 +114,20 @@ flowchart TD
 | **同名 service** | 先加载者优先；后加载者该 service 被过滤（警告） | 防止两个插件抢同一个命令，行为确定 |
 | **不兼容 engine** | 跳过加载，输出警告 | 防止 API 不兼容导致运行时崩溃 |
 | **disabled 插件** | 跳过不加载（不卸载文件） | 禁用的插件文件保留，随时可重新启用 |
-| **catalog 坏文件** | 单文件跳过，其他正常 | 一个 JSON 写错不拖垮整个插件 |
+| **catalog 坏文件** | 跳过该文件 + push warning 到 warnings channel | `loadPluginServices` 返回 `{ services, warnings }`——单个 JSON 损坏不拖垮整个插件，所有降级路径由 warnings 汇总报告 |
+
+### service 冲突警告格式
+
+当两个插件声明了同名 service（如插件 A 和插件 B 都提供了 `leave` 服务），加载器在 warn channel 中输出以下格式的冲突消息，明确指出"胜者"（先加载的插件）和"败者"（后加载的插件）：
+
+```
+service "leave" 冲突：plugin-B 与 plugin-A 均提供。当前 plugin-A 生效；若要 plugin-B 生效请先 plugin disable plugin-A
+```
+
+这个格式包含三个关键信息：
+1. **冲突的 service 名**——哪个资源发生了冲突。
+2. **胜者（先加载者）**——当前哪个插件在提供这个 service。
+3. **败者（后加载者）与修复命令**——要切换到败者，需要先禁用胜者。
 
 ### scanEntries 的 Windows 兼容
 
@@ -188,15 +214,16 @@ plugin disable leave
 
 ---
 
-## 4.6 插件开发者常犯的 5 个错误
+## 4.6 插件开发者常犯的 6 个错误
 
 | # | 错误 | 表现 | 纠正 |
 |---|------|------|------|
 | 1 | `"scripts": "scripts"` 指向 .ts 源码 | 脚本从不执行 | 改为 `"scripts": "dist/scripts"` |
-| 2 | manifest 缺少 `engine` 字段 | zod 校验失败，插件被跳过 | 加上 `"engine": "^0.8.0"` |
+| 2 | manifest 缺少 `engine` 字段 | zod 校验失败，插件被跳过 | 加上 `"engine": ">=0.8.0"` |
 | 3 | `routes` 不声明 | suite 路由表不含你的插件，AI 路由不到 | 在 manifest 加 `"routes": { "关键词": "saicmotor-xxx" }` |
 | 4 | skill 目录名与 SKILL.md 的 `name` 不一致 | AI 发现不了或匹配错误 | 确保目录名 = frontmatter name |
 | 5 | `saicmotor install` 以为会注册插件 skills | 插件 skills 未注册 | 插件 skills 由 `plugin install` 自动注册 |
+| 6 | engine 用了 `"^0.8.0"` | CLI 升级到 0.9.x 后所有插件被禁用 | 改为 `">=0.8.0"`（详见 §4.2 engine 字段说明） |
 
 ---
 
