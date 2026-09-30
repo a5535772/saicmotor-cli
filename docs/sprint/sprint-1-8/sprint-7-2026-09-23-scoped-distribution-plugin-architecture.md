@@ -267,5 +267,5 @@ SDK **不含引擎本体**：插件不依赖也不复制核心代码，运行时
 
 - [Sprint 7: npm Registry 发布](sprint-7-npm-registry-publish.md)
 - [Sprint 8: Skill 插件化生态](sprint-8-skill-plugin-ecosystem.md)
-- [TODO 清单](todo.md)
+- [TODO 清单](../sprint-quick/todo.md)
 - 经验依赖（memory）：npm-registry-publish-strategy、npm-v11-global-install-quirks、feishu-cli-npx-detection、feishu-cli-runjs-graceful-degradation、feishu-cli-explicit-files

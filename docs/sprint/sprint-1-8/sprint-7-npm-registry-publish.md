@@ -91,7 +91,7 @@
 - [端到端架构设计（S7/S8/S9）](2026-09-23-scoped-distribution-plugin-architecture.md)
 - [Sprint 8: Skill 插件化生态](sprint-8-skill-plugin-ecosystem.md)
 - [Sprint 9: 默认能力收敛](sprint-9-default-capability-convergence.md)
-- [TODO 清单](todo.md)
+- [TODO 清单](../sprint-quick/todo.md)
 - 经验依赖（memory）：npm-registry-publish-strategy、npm-v11-global-install-quirks、feishu-cli-npx-detection、feishu-cli-runjs-graceful-degradation、feishu-cli-explicit-files
 
 ## 不做的

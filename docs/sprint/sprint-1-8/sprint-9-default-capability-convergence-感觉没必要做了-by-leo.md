@@ -4,7 +4,7 @@
 >
 > 本 sprint 是 scoped 分发 + 插件生态统一架构的**收敛期**：验证 S8 的插件机制可纯外部化后，
 > 把具业务属性的能力全部移出框架核心，默认只保留"查询用户基本信息"这一项。
-> 需求来源见 [端到端架构设计](2026-09-23-scoped-distribution-plugin-architecture.md) §4「S9」及 [TODO 事项 2/3](todo.md)。
+> 需求来源见 [端到端架构设计](2026-09-23-scoped-distribution-plugin-architecture.md) §4「S9」及 [TODO 事项 2/3](../sprint-quick/todo.md)。
 
 ## 1. 背景
 
@@ -61,7 +61,7 @@ S8 把 leave / attendance 在框架 monorepo 内改造成了插件，机制已�
 - [端到端架构设计（S7/S8/S9）](2026-09-23-scoped-distribution-plugin-architecture.md)
 - [Sprint 7: npm Registry 发布 + Scoped 改名](sprint-7-npm-registry-publish.md)
 - [Sprint 8: Skill 插件化生态](sprint-8-skill-plugin-ecosystem.md)
-- [TODO 清单](todo.md)
+- [TODO 清单](../sprint-quick/todo.md)
 
 ## 6. 不做的
 

@@ -506,22 +506,22 @@ Get-Content "$env:USERPROFILE\.claude\skills\saicmotor-suite\SKILL.md" -Encoding
 **测试 A — 能力发现：**
 > `你能用 saicmotor 做什么？简要列出可用的业务能力。`
 
-- [ ] **4.5a** AI 提到 `请假` / `leave` 和 `考勤` / `attendance`
+- [x] **4.5a** AI 提到 `请假` / `leave` 和 `考勤` / `attendance`
 
 **测试 B — 拼出 leave 命令：**
 > `帮我提一个请假申请：员工 EMP001，年假，2026-09-25 到 2026-09-27，用 saicmotor`
 
-- [ ] **4.5b** AI 能拼出 `saicmotor leave applications submit --start-date 2026-09-25 --end-date 2026-09-27 --reason 年假 --yes`
+- [x] **4.5b** AI 能拼出 `saicmotor leave applications submit --start-date 2026-09-25 --end-date 2026-09-27 --reason 年假 --yes`
 
 **测试 C — 拼出 attendance 命令：**
 > `EMP003 在 2026-09-26 忘记打卡了，帮他用 saicmotor 提交补卡`
 
-- [ ] **4.5c** AI 能拼出 `saicmotor attendance corrections submit --date 2026-09-26 --reason 忘记打卡`
+- [x] **4.5c** AI 能拼出 `saicmotor attendance corrections submit --date 2026-09-26 --reason 忘记打卡`
 
 **测试 D — plugin list --json 机读：**
 > `读取 saicmotor plugin list --json 的输出，告诉我当前装了哪些插件及其版本`
 
-- [ ] **4.5d** AI 能正确解析 JSON 并列出插件名和版本
+- [x] **4.5d** AI 能正确解析 JSON 并列出插件名和版本
 
 **截图位：➎ Skills 注册 & AI 发现（全部 SKILL.md 落盘 + suite 路由表内容 + AI 问答）**
 
@@ -587,6 +587,21 @@ saicmotor plugin list --json
 ```
 
 > **预期**：`plugin-reimbursement` 出现，`source` 为 `"linked"`。
+
+> **备注知识 —— 为什么 5.4 要 `npm install`，却又全程没有 `build`：**
+>
+> **① 为什么 `npm install --registry=http://localhost:4873`？**
+> 这一步装的是本插件工程的**依赖**（`@saicmotor/sdk` + typescript/vitest/zod），不是安装 reimbursement 插件本身。加 `--registry` 是因为 `@saicmotor/sdk` 只发布在本地 Verdaccio（阶段 0.3 已 publish），公网 npm 上没有；其余公共包（typescript/vitest/zod）由 Verdaccio 的 uplink 代理到 npmjs.org。reimbursement 插件本身从不 publish，靠 `dev` 的 junction link 直接指向本地源码。
+>
+> **② 为什么 5.x 全程没有 `npm run build`？**
+> 插件是**声明式优先**：脚手架生成的工程 0 行 TypeScript（无 `src/`），插件内容就是 `catalog/services/*.json`（声明 service/resource/method）+ `skills/*/SKILL.md`。CLI 运行时**直接读这些源码文件**拼 HTTP 请求（`engine/run.ts`），从不读 `dist/`，所以 dev 联调无需编译。`tsc`/`dist` 只在两条路才需要：写自定义命令式脚本（`src/*.ts`）时，或 `npm publish` 触发 `prepublishOnly`（`build && test`）时。
+>
+> **③ 三者的关系（一句话对照）：**
+> - `install` → 安装插件自身声明的**依赖包**（sdk/typescript/vitest/zod），为「写 TS / 跑测试」备工具链，纯声明式时用不上。
+> - `build` → 本地把 `.ts` 编译成 `dist/*.js`，只有写命令式脚本才需要，纯声明式时没东西可编。
+> - `link`（`saicmotor dev`）→ 让 CLI（业务命令）和 AI（skills）直接用**本地未发布的源码**，三者里唯一真正干活的，是 dev 联调核心。
+>
+> 一句话：**link 是核心（本地源码挂给 CLI+AI 用），install 和 build 都是「备而不用」（只为命令式脚本 / 测试 / 发布预留）。** 严格说 `npm install` 也不是 `dev` 的硬前提（dev 不碰插件的 node_modules）。
 
 ### 5.5 dev --stop——解除
 
@@ -692,39 +707,39 @@ Test-Path "$env:USERPROFILE\.saicmotor"
 
 | 步骤 | 内容 | 结果 | 截图 |
 |------|------|:---:|------|
-| 0.3 | 5 个包全部 publish 成功 | | |
-| 0.4 | mock-server 启动（2 个端口） | | ➊ |
-| 1.2 | `saicmotor install` 注册内核 skills | | |
-| 1.3 | `--version` 输出 `0.8.0` | | |
-| 1.4 | `--help` 无 leave/attendance（插件未装） | | ➋ |
-| 1.5 | `uninstall` 命令可见 | | ➋ |
-| 1.6 | `plugin list` 初始为空 | | ➋ |
-| 2.1 | `plugin install leave` 成功（短名展开） | | |
-| 2.3 | `plugin list` 显示三个插件 | | ➌ |
-| 2.4 | `--help` 出现 leave/attendance | | |
-| 2.5 | `disable` → leave 命令消失 | | ➌ |
-| 2.6 | `enable` → leave 命令恢复 | | |
-| 2.8 | `uninstall user` → 确认 → 重装恢复 | | |
-| 3.2 | 飞书 OAuth 登录成功 | | |
-| 3.3 | 三种格式查询正常 | | ➍ |
-| 3.4 | 请假：dry-run → 拒 → 提交 | | ➍ |
-| 3.5 | 补卡：dry-run → 提交 | | |
-| 4.1 | 5 个 SKILL.md 落盘 | | ➎ |
-| 4.2 | suite 路由聚合正确 | | ➎ |
-| 4.3 | disable → skill 消失 / 路由收缩；enable → 恢复 | | |
-| 4.4 | 卸载 leave → suite 路由收缩；重装 → 恢复 | | |
-| 4.5a | AI 发现 saicmotor 能力 | | ➎ |
-| 4.5b | AI 拼出 leave 命令 | | |
-| 4.5c | AI 拼出 attendance 命令 | | |
-| 4.5d | AI 解析 plugin list --json | | |
-| 5.1 | `create plugin` 生成正确骨架（含 routes） | | ➏ |
-| 5.2 | `validate` 通过 | | ➏ |
-| 5.3 | 坏 manifest 被拒绝 | | |
-| 5.4 | `dev` link 建立 → list 可见 | | ➏ |
-| 5.5 | `dev --stop` 解除 → list 消失 | | |
-| 6.2 | 全部卸载后 plugin list 为空 | | |
-| 6.3 | `saicmotor uninstall` 一键清干净 | | |
-| 6.4-6.6 | CLI 不可用 + skills 干净 + 数据删除 | | |
+| 0.3 | 5 个包全部 publish 成功 | ✓ | |
+| 0.4 | mock-server 启动（2 个端口） | ✓ | ➊ |
+| 1.2 | `saicmotor install` 注册内核 skills | ✓ | |
+| 1.3 | `--version` 输出 `0.8.0` | ✓ | |
+| 1.4 | `--help` 无 leave/attendance（插件未装） | ✓ | ➋ |
+| 1.5 | `uninstall` 命令可见 | ✓ | ➋ |
+| 1.6 | `plugin list` 初始为空 | ✓ | ➋ |
+| 2.1 | `plugin install leave` 成功（短名展开） | ✓ | |
+| 2.3 | `plugin list` 显示三个插件 | ✓ | ➌ |
+| 2.4 | `--help` 出现 leave/attendance | ✓ | |
+| 2.5 | `disable` → leave 命令消失 | ✓ | ➌ |
+| 2.6 | `enable` → leave 命令恢复 | ✓ | |
+| 2.8 | `uninstall user` → 确认 → 重装恢复 | ✓ | |
+| 3.2 | 飞书 OAuth 登录成功 | ✓ | |
+| 3.3 | 三种格式查询正常 | ✓ | ➍ |
+| 3.4 | 请假：dry-run → 拒 → 提交 | ✓ | ➍ |
+| 3.5 | 补卡：dry-run → 提交 | ✓ | |
+| 4.1 | 5 个 SKILL.md 落盘 | ✓ | ➎ |
+| 4.2 | suite 路由聚合正确 | ✓ | ➎ |
+| 4.3 | disable → skill 消失 / 路由收缩；enable → 恢复 | ✓ | |
+| 4.4 | 卸载 leave → suite 路由收缩；重装 → 恢复 | ✓ | |
+| 4.5a | AI 发现 saicmotor 能力 | ✓ | ➎ |
+| 4.5b | AI 拼出 leave 命令 | ✓ | |
+| 4.5c | AI 拼出 attendance 命令 | ✓ | |
+| 4.5d | AI 解析 plugin list --json | ✓ | |
+| 5.1 | `create plugin` 生成正确骨架（含 routes） | ✓ | ➏ |
+| 5.2 | `validate` 通过 | ✓ | ➏ |
+| 5.3 | 坏 manifest 被拒绝 | ✓ | |
+| 5.4 | `dev` link 建立 → list 可见 | ✓ | ➏ |
+| 5.5 | `dev --stop` 解除 → list 消失 | ✓ | |
+| 6.2 | 全部卸载后 plugin list 为空 | ✓ | |
+| 6.3 | `saicmotor uninstall` 一键清干净 | ✓ | |
+| 6.4-6.6 | CLI 不可用 + skills 干净 + 数据删除 | ✓ | |
 
 ---
 
@@ -738,6 +753,6 @@ Test-Path "$env:USERPROFILE\.saicmotor"
 
 ## 结论
 
-- [ ] 全部通过，验收完成
+- [x] 全部通过，验收完成
 - [ ] 有问题但不阻塞发布（见上表）
 - [ ] 阻塞性问题，需修复后重新验证
