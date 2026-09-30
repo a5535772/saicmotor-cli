@@ -21,8 +21,8 @@ export function registerAuth(program: Command): void {
           }
           writeCredentials({ username: opts.username, password: opts.password });
         }
-        const token = await createAuthProvider(config).login();
-        console.log(`已登录，token 已缓存（${token.slice(0, 8)}…）`);
+        await createAuthProvider(config).login();
+        console.log("已登录，token 已缓存");
       } catch (e) { handleError(e); }
     });
 
