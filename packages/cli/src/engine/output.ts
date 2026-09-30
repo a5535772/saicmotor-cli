@@ -1,4 +1,4 @@
-import { SaicmotorError } from "./errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 
 export function toTableRows(data: unknown): Array<Record<string, unknown>> {
   if (Array.isArray(data)) return data as Array<Record<string, unknown>>;

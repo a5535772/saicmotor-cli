@@ -1,6 +1,6 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { SaicmotorError } from "../engine/errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 
 export interface CallbackParams {
   code: string;

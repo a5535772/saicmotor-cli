@@ -1,6 +1,6 @@
 import type { Config } from "../config";
 import type { Service, Method, RunResult } from "@saicmotor/sdk";
-import { SaicmotorError } from "./errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 import { send, type HttpResponse } from "./http";
 import { ensureToken } from "../auth/session";
 import { applyAuth } from "../auth/transport";

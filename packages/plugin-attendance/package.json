@@ -17,10 +17,10 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
+    "@saicmotor/sdk": "*",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@saicmotor/sdk": "*",
     "@types/node": "^20.14.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"

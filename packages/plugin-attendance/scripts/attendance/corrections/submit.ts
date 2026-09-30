@@ -1,14 +1,5 @@
+import { SaicmotorError } from "@saicmotor/sdk";
 import type { ScriptContext, ScriptFn, RunResult } from "@saicmotor/sdk";
-
-class UpstreamError extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = "UpstreamError";
-  }
-}
 
 const submit: ScriptFn = async (ctx: ScriptContext): Promise<RunResult> => {
   console.error("[script] 补卡申请前校验通过");
@@ -30,7 +21,7 @@ const submit: ScriptFn = async (ctx: ScriptContext): Promise<RunResult> => {
   });
 
   if (resp.status >= 400) {
-    throw new UpstreamError("upstream", `上游 HTTP ${resp.status}`);
+    throw new SaicmotorError("upstream", `上游 HTTP ${resp.status}`);
   }
 
   const json = (await resp.json()) as Record<string, unknown> | undefined;

@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import { loadConfig } from "../config";
 import { writeCredentials, clearCredentials, clearToken, readToken } from "../auth/store";
 import { createAuthProvider } from "../auth/provider";
-import { SaicmotorError } from "../engine/errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 import { handleError } from "./error";
 
 export function registerAuth(program: Command): void {

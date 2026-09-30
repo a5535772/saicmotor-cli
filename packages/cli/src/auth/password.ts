@@ -1,5 +1,5 @@
 import type { Config } from "../config";
-import { SaicmotorError } from "../engine/errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 import { send } from "../engine/http";
 import { getByPath } from "../engine/extract";
 import { writeToken, readCredentials } from "./store";

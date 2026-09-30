@@ -1,6 +1,6 @@
 import type { Config } from "../config";
 import type { Method, Field } from "@saicmotor/sdk";
-import { SaicmotorError } from "./errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 
 export function buildUrl(config: Config, servicePath: string, method: Method): string {
   return config.gateway + servicePath + method.path;

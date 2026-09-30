@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadConfig } from "../config";
 import type { Service, Method, ScriptContext, ScriptFn, RunResult } from "@saicmotor/sdk";
-import { SaicmotorError } from "./errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 import { distRoot, packageFile } from "../pkg-root";
 import { loadPlugins } from "../plugin/loader";
 

@@ -1,6 +1,6 @@
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
-import { SaicmotorError } from "../engine/errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 
 const execAsync = promisify(exec);
 

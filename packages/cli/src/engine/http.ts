@@ -1,4 +1,4 @@
-import { SaicmotorError } from "./errors";
+import { SaicmotorError } from "@saicmotor/sdk";
 
 export interface HttpRequestInput {
   method: string;
