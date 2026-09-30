@@ -288,7 +288,7 @@ describe("plugin loader", () => {
     expect(names).toEqual(["svc1", "svc2"]);
   });
 
-  it("skips bad catalog JSON silently (other services still load)", () => {
+  it("skips bad catalog JSON with a warning (other services still load)", () => {
     setupPluginDir(
       "plugin-partial",
       { name: "@saicmotor/plugin-partial", engine: ">=0.4.0", catalog: ["catalog/services/*.json"] },

@@ -10,7 +10,10 @@
 npm install @saicmotor/sdk --registry=<内部 registry>
 ```
 
-插件开发时放在 `devDependencies` 即可，运行时类型由 CLI 引擎注入。
+依赖放法分两种：
+
+- 只用**类型**或 Zod schema（纯 catalog/manifest 声明）：放 `devDependencies` 即可。
+- 脚本在**运行时** import 值（如 `SaicmotorError`）：必须放 `dependencies`——published 安装时脚本由插件自己的 `node_modules` 解析 SDK。
 
 ---
 
@@ -35,6 +38,8 @@ import type {
 import {
   PluginManifestSchema,  // manifest 的 Zod schema（用于校验）
   validateManifest,      // 校验 manifest 对象，抛 ZodError 或返回 parsed
+  SaicmotorError,        // 统一错误类：new SaicmotorError(category, message, { hint, upstream })
+  EXIT_CODES,            // category → exit code 映射（validation=2 auth=3 network=4 upstream=5 spec=6）
 } from "@saicmotor/sdk";
 ```
 
@@ -90,3 +95,5 @@ export default create;
 | `ensureToken()` | `() => Promise<string>` | 获取认证 token（缓存优先） |
 
 脚本必须默认导出 `(ctx: ScriptContext) => Promise<RunResult>`。
+
+抛错统一用 `SaicmotorError`（如 `throw new SaicmotorError("upstream", \`上游 HTTP ${resp.status}\`)`），CLI 会按 category 映射 exit code（validation=2 / auth=3 / network=4 / upstream=5 / spec=6）并格式化输出。
