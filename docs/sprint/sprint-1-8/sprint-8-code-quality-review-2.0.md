@@ -341,25 +341,25 @@ export function fullName(input: string): string {
 
 ### 未修复（18 项）→ 4 类去向
 
-#### ① Sprint 9 直接修复（7 项 / 8 发现，已定方案，待实现）
+#### ① Sprint 9 直接修复（7 项 / 8 发现）
 
 | ID | 严重度 | 问题 | 处理 | 何时 |
 |----|:---:|------|------|------|
-| S3 + S4 | 🟠/🟡 | 动态 import 路径穿越 + catalog 名路径校验 | `path.resolve()` 路径围栏 | Sprint 9（待排期） |
-| L4 | 🟡 | 插件冲突 warning 没说清 disable 谁 | 文案点名「当前 X 生效，disable X」 | Sprint 9 |
-| L6 | 🟡 | 插件脚本 `UpstreamError` 非 `SaicmotorError` | SDK 导出错误类 + 结构判断 | Sprint 9 |
-| C3 | 🟡 | 插件 catalog 解析错误静默丢弃 | `{ services, warnings }` 并入 | Sprint 9 |
-| A1 | 🟡 | `loadPlugins(_config)` 死参数 | 删参数，4 调用点改 | Sprint 9 |
-| S5 | 🟢 | 登录打印 `token.slice(0,8)` | 改「已登录，token 已缓存」 | Sprint 9 |
-| C5 | 🟢 | 9 处空 catch 裸吞无注释 | 各补一句「为何吞安全」 | Sprint 9 |
+| S3 + S4 | 🟠/🟡 | 动态 import 路径穿越 + catalog 名路径校验 | `path.resolve()` 路径围栏 | ✅ 已完成（Sprint 9） |
+| L4 | 🟡 | 插件冲突 warning 没说清 disable 谁 | 文案点名「当前 X 生效，disable X」 | ✅ 已完成（Sprint 9） |
+| L6 | 🟡 | 插件脚本 `UpstreamError` 非 `SaicmotorError` | SDK 导出错误类 + 结构判断 | ✅ 已完成（Sprint 9） |
+| C3 | 🟡 | 插件 catalog 解析错误静默丢弃 | `{ services, warnings }` 并入 | ✅ 已完成（Sprint 9） |
+| A1 | 🟡 | `loadPlugins(_config)` 死参数 | 删参数，4 调用点改 | ✅ 已完成（Sprint 9） |
+| S5 | 🟢 | 登录打印 `token.slice(0,8)` | 改「已登录，token 已缓存」 | ✅ 已完成（Sprint 9） |
+| C5 | 🟢 | 9 处空 catch 裸吞无注释 | 各补一句「为何吞安全」 | ✅ 已完成（Sprint 9） |
 
 #### ② Sprint 9 SDK 契约收口（3 项合一）
 
 | ID | 严重度 | 问题 | 处理 | 何时 |
 |----|:---:|------|------|------|
-| C1 | 🟡 | CLI ↔ SDK 类型重复（3 组） | SDK 收口单一真相源（zod + 类型搬入） | Sprint 9 |
-| C7（含 A3） | 🟢 | `validateManifest` / `definePlugin` 一行 `.parse()` 重复 | 只留 `validateManifest`，`definePlugin` 删/降级 | Sprint 9 |
-| A7 | 🟢 | SDK `context.ts` 契约太宽（9 个 auth 字段） | 窄化 `Config` → `{ gateway }` | Sprint 9 |
+| C1 | 🟡 | CLI ↔ SDK 类型重复（3 组） | SDK 收口单一真相源（zod + 类型搬入） | ✅ 已完成（Sprint 9） |
+| C7（含 A3） | 🟢 | `validateManifest` / `definePlugin` 一行 `.parse()` 重复 | 只留 `validateManifest`，`definePlugin` 删/降级 | ✅ 已完成（Sprint 9） |
+| A7 | 🟢 | SDK `context.ts` 契约太宽（9 个 auth 字段） | 窄化 `Config` → `{ gateway }` | ✅ 已完成（Sprint 9） |
 
 #### ③ backlog（4 项，触发条件满足时再捡起）
 
