@@ -123,7 +123,7 @@ export function loadPlugins(_config: Config): LoadResult {
         const existing = loaded.find((p) => p.services.some((s) => s.name === svc.name));
         if (existing) {
           warnings.push(
-            `service "${svc.name}" 冲突：${manifest.name} 与 ${existing.manifest.name} 均提供，请用 plugin disable 处理`,
+            `service "${svc.name}" 冲突：${manifest.name} 与 ${existing.manifest.name} 均提供。当前 ${existing.manifest.name} 生效；若要 ${manifest.name} 生效请先 plugin disable ${existing.manifest.name}`,
           );
         }
       }

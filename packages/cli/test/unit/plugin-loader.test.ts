@@ -229,6 +229,13 @@ describe("plugin loader", () => {
     );
     const result = loadPlugins(makeTestConfig());
     expect(result.warnings.some((w: string) => w.includes("冲突"))).toBe(true);
+    // 冲突 warning 点名胜者（先加载，生效）与败者（后加载，未生效），并给出 disable 指引
+    const conflictWarning = result.warnings.find((w: string) => w.includes("冲突"))!;
+    expect(conflictWarning).toContain("@saicmotor/plugin-alpha");
+    expect(conflictWarning).toContain("@saicmotor/plugin-beta");
+    expect(conflictWarning).toContain("disable");
+    // 点名先加载的胜者（plugin-alpha）当前生效，后加载者（plugin-beta）未生效
+    expect(conflictWarning).toContain("当前 @saicmotor/plugin-alpha 生效");
     // First loaded plugin keeps the service
     const alpha = result.plugins.find((p) => p.manifest.name === "@saicmotor/plugin-alpha");
     const beta = result.plugins.find((p) => p.manifest.name === "@saicmotor/plugin-beta");
