@@ -116,7 +116,7 @@ flowchart TB
     CLI -->|"dependencies（runtime）"| SDK
     P1 -->|"dependencies（runtime）"| SDK
     P2 -->|"dependencies（runtime）"| SDK
-    P3 -->|"dependencies（runtime）"| SDK
+    P3 -.->|"devDependencies（仅类型）"| SDK
     CLI -.->|"运行时通过 npm install 安装到 ~/.saicmotor/plugins/，启动时动态加载"| P1
     CLI -.->|"同上"| P2
     CLI -.->|"同上"| P3
@@ -129,13 +129,15 @@ flowchart TB
 | 方向 | 类型 | 说明 |
 |------|------|------|
 | CLI → SDK | **dependencies** | CLI 在 `loader.ts`、`catalog.ts`、`run.ts`、`error.ts` 等多处直接 `import { ... } from "@saicmotor/sdk"`，需 SDK 在运行时可用 |
-| 插件 → SDK | **dependencies** | 插件脚本在运行时 `import { SaicmotorError } from "@saicmotor/sdk"`。若放在 devDependencies，npm install 插件时不安装 SDK，脚本执行时报 MODULE_NOT_FOUND |
+| plugin-leave / plugin-attendance → SDK | **dependencies** | 脚本在运行时 `import { SaicmotorError } from "@saicmotor/sdk"`，必须放在 dependencies |
+| plugin-user → SDK | **devDependencies** | 仅使用类型（`ScriptContext`、`Service` 等），无运行时 import——devDependencies 即可满足编译需求 |
 | CLI → 插件 | **运行时动态加载** | 通过 npm install 安装到 `~/.saicmotor/plugins/node_modules/`，CLI 启动时 `loadPlugins()` 扫描 |
 
 SDK 既是编译时类型契约（`ScriptContext`、`ScriptFn` 等 interface），也是运行时能力（`SaicmotorError` 类、`ServiceSchema.parse()` 等 zod 校验）。这意味着：
 
 - SDK 版本变更是**有运行时影响的**——zod schema 收紧会导致之前能通过校验的 catalog 被拒绝
-- 插件必须在 `dependencies` 中声明 SDK，不能依赖 CLI 间接提供（npm 不保证间接依赖的解析路径）
+- 如果插件脚本在运行时 `import` SDK 中的类或函数（如 `SaicmotorError`），SDK 必须放在 `dependencies` 而非 `devDependencies`——否则 npm install 安装插件时不会拉取 SDK，脚本执行时报 MODULE_NOT_FOUND
+- 如果插件仅使用 SDK 的类型（`import type`），放在 `devDependencies` 即可——类型在编译后被擦除，运行时不需要 SDK
 - CLI 和插件通过共享同一份 SDK 类型契约保证接口一致性——CLI 升级 SDK 版本后，插件重新 `npm install` 即同步契约
 
 ---
@@ -285,7 +287,7 @@ sequenceDiagram
 ## ❓ 自学检查
 
 1. 五层架构中，加一个新业务系统需要修改哪几层？不需要修改哪几层？
-2. 为什么插件必须把 `@saicmotor/sdk` 放在 `dependencies`（而非 `devDependencies`）？如果用 `devDependencies` 有什么后果？
+2. plugin-leave 和 plugin-attendance 把 `@saicmotor/sdk` 放在 `dependencies`，而 plugin-user 放在 `devDependencies`。两种选择的依据是什么？如果放错会有什么后果？
 3. 从用户输入命令到终端输出 JSON，引擎内部经过哪些步骤？每步的输入和输出是什么？
 4. Catalog 加载阶段，`ServiceSchema.parse()` 校验失败会怎样？校验通过后数据流向哪里？
 
