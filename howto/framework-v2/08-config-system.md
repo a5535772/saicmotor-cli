@@ -76,7 +76,32 @@ export const DEFAULT_CONFIG: Config = {
 
 > 💡 `gateway` 的硬编码兜底值 `"http://localhost:8081"` 永远不该在生产被访问——它在优先级链的最末端。前三层任意一层有值即跳过它。
 
-### 三、用户配置文件：`~/.saicmotor/config.json`
+### 三、SDK Config vs CLI Config（设计意图）
+
+`@saicmotor/sdk` 的 `Config` 接口仅含 `gateway`：
+
+```typescript
+// packages/sdk/src/config-types.ts
+export interface Config {
+  gateway: string;
+}
+```
+
+这是**接口隔离原则**的体现：SDK 不需要知道 auth 细节，它只负责将网关 URL 传递给脚本上下文（`ScriptContext.config.gateway`）。认证相关的所有逻辑（token 获取、缓存、401 重试）都在 CLI 侧独立完成。
+
+CLI 侧的完整配置包含 `auth` 字段（`packages/cli/src/config.ts`），但在以下场景中只取出 `gateway` 传给 SDK：
+
+```typescript
+// engine/run.ts:27 — send() 调用时用 config.gateway 拼 URL
+const url = buildUrl(config, servicePath, method);
+
+// engine/script.ts — 传给脚本的 ScriptContext.config 是完整 Config
+// 但注解声明为 SDK 的 Config（gateway-only），脚本只访问 .gateway
+```
+
+这意味着：如果你修改 SDK 的 `Config` 类型，插件脚本的类型约束会相应变化。但 CLI 内部的认证配置始终独立，不受 SDK 类型影响。
+
+### 四、用户配置文件：`~/.saicmotor/config.json`
 
 用户可覆盖任意字段（部分覆盖，非全量替换）：
 
@@ -90,21 +115,21 @@ export const DEFAULT_CONFIG: Config = {
 }
 ```
 
-读取逻辑（`config.ts:58-72`）：
+读取逻辑（`config.ts:59-73`）：
 - `gateway`：环境变量 → 用户配置 → 包级默认 → 硬编码
 - `auth`：浅合并 `DEFAULT_CONFIG.auth` ← 用户 `auth` ← `SAICMOTOR_AUTH_TYPE`
 
-### 四、环境变量
+### 五、环境变量
 
 | 变量 | 覆盖项 | 优先级 | 使用文件 |
 |------|--------|:---:|------|
-| `SAICMOTOR_HOME` | 数据根目录（替代 `~/.saicmotor`） | 最高 | `src/config.ts:51` |
-| `SAICMOTOR_GATEWAY` | 网关地址 | 最高 | `src/config.ts:65` |
-| `SAICMOTOR_AUTH_TYPE` | 认证类型 `"password"` / `"exchange"` | 最高 | `src/config.ts:69` |
+| `SAICMOTOR_HOME` | 数据根目录（替代 `~/.saicmotor`） | 最高 | `src/config.ts:52` |
+| `SAICMOTOR_GATEWAY` | 网关地址 | 最高 | `src/config.ts:66` |
+| `SAICMOTOR_AUTH_TYPE` | 认证类型 `"password"` / `"exchange"` | 最高 | `src/config.ts:70` |
 | `SAICMOTOR_USERNAME` | 用户名（CI/非交互环境） | — | `src/auth/store.ts:24` |
 | `SAICMOTOR_PASSWORD` | 密码（CI/非交互环境） | — | `src/auth/store.ts:25` |
-| `SAICMOTOR_CATALOG` | catalog 目录覆盖（测试/定制） | 最高 | `src/config.ts:75` |
-| `SAICMOTOR_SCRIPTS` | 脚本目录覆盖（测试/定制，绕过四层查找） | 最高 | `src/engine/script.ts:43` |
+| `SAICMOTOR_CATALOG` | catalog 目录覆盖（测试/定制） | 最高 | `src/config.ts:76` |
+| `SAICMOTOR_SCRIPTS` | 脚本目录覆盖（测试/定制，绕过四层查找） | 最高 | `src/engine/script.ts:36` |
 
 ---
 
@@ -124,7 +149,8 @@ flowchart TD
 
     RESULT --> RUN["engine/run.ts<br/>执行管道"]
     RESULT --> SESSION["auth/session.ts<br/>ensureToken"]
-    RESULT --> LOADER["plugin/loader.ts<br/>loadPlugins"]
+
+    LOADER["plugin/loader.ts<br/>loadPlugins() 无参数调用"]
 ```
 
 ---

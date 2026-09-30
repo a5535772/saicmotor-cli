@@ -39,7 +39,7 @@ sequenceDiagram
     C->>C: 缓存 token 到 ~/.saicmotor/token.json (mode 0600)
     C->>C: 关闭 loopback 服务器
 
-    C-->>U: ✓ 登录成功，token 已缓存
+    C-->>U: 已登录，token 已缓存
 ```
 
 ### 关键步骤
@@ -146,6 +146,8 @@ if (resp.status === 401) {
 ```
 
 **只重试一次**——如果重试后仍然 401，说明不是 token 过期问题（可能是真的无权限），直接抛错。
+
+> 以上代码中的 `config` 参数类型是 CLI 侧的 `Config`（来自 `packages/cli/src/config.ts`，包含 `auth` 字段），而非 SDK 的 `Config`（`packages/sdk/src/config-types.ts`，仅含 `gateway`）。认证逻辑完全在 CLI 层闭环，SDK 对 auth 一无所知。
 
 ---
 

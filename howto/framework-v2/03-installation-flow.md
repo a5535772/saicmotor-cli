@@ -92,7 +92,7 @@ sequenceDiagram
     U->>C: saicmotor plugin install leave
     C->>NPM: npm install @saicmotor/plugin-leave
     NPM-->>FS: ~/.saicmotor/plugins/node_modules/@saicmotor/plugin-leave
-    C->>FS: 读 manifest → 校验 engine ^0.8.0 ✓
+    C->>FS: 读 manifest → 校验 engine 兼容性（与 getCoreVersion() 比对）
     C->>FS: junction: saicmotor-leave skill 到各 AI 客户端
     C->>FS: 全量重建 suite SKILL.md（含 leave 路由）
     C->>FS: 写入 state.json
@@ -123,7 +123,7 @@ sequenceDiagram
 
 ```bash
 # 1. 核心命令可用
-saicmotor --version    # → 0.8.0
+saicmotor --version    # 输出与 package.json 同步的动态版本（getCoreVersion()）
 saicmotor --help       # → 含 install, uninstall, plugin, auth 等
 
 # 2. Skills 落盘成功
