@@ -1,5 +1,5 @@
 import type { Config } from "../config";
-import type { Service, Method } from "@saicmotor/sdk";
+import type { Service, Method, RunResult } from "@saicmotor/sdk";
 import { SaicmotorError } from "./errors";
 import { send, type HttpResponse } from "./http";
 import { ensureToken } from "../auth/session";
@@ -7,11 +7,6 @@ import { applyAuth } from "../auth/transport";
 import { clearToken } from "../auth/store";
 import { buildUrl, coerceFields, buildBody } from "./request";
 import { findScript, executeScript } from "./script";
-
-export interface RunResult {
-  ok: true;
-  data: unknown;
-}
 
 function extractMessage(body: unknown): string | undefined {
   if (body && typeof body === "object") return String((body as Record<string, unknown>).msg ?? "");

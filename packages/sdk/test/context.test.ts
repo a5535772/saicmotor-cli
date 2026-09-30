@@ -7,18 +7,6 @@ describe("ScriptContext types", () => {
     const ctx: ScriptContext = {
       config: {
         gateway: "https://api.example.com",
-        auth: {
-          type: "password",
-          loginPath: "/auth/login",
-          tokenPath: "/auth/token",
-          tokenHeader: "Authorization",
-          tokenPrefix: "Bearer ",
-          startPath: "/auth/start",
-          exchangePath: "/auth/exchange",
-          loopbackHost: "127.0.0.1",
-          loopbackPort: 8080,
-          callbackTimeoutMs: 60_000,
-        },
       },
       service: {
         name: "test-svc",
@@ -49,18 +37,6 @@ describe("ScriptContext types", () => {
     const result = await handler({
       config: {
         gateway: "https://api.example.com",
-        auth: {
-          type: "password",
-          loginPath: "/auth/login",
-          tokenPath: "/auth/token",
-          tokenHeader: "Authorization",
-          tokenPrefix: "Bearer ",
-          startPath: "/auth/start",
-          exchangePath: "/auth/exchange",
-          loopbackHost: "127.0.0.1",
-          loopbackPort: 8080,
-          callbackTimeoutMs: 60_000,
-        },
       },
       service: { name: "svc", servicePath: "/", resources: {} },
       method: { id: "m", path: "/", httpMethod: "GET" },

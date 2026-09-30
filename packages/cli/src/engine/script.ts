@@ -1,23 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Config } from "../config";
 import { loadConfig } from "../config";
-import type { Service, Method } from "@saicmotor/sdk";
-import type { RunResult } from "./run";
+import type { Service, Method, ScriptContext, ScriptFn, RunResult } from "@saicmotor/sdk";
 import { SaicmotorError } from "./errors";
 import { distRoot, packageFile } from "../pkg-root";
 import { loadPlugins } from "../plugin/loader";
-
-export interface ScriptContext {
-  config: Config;
-  service: Service;
-  method: Method;
-  values: Record<string, unknown>;
-  dryRun: boolean;
-  ensureToken: () => Promise<string>;
-}
-
-export type ScriptFn = (ctx: ScriptContext) => Promise<RunResult>;
 
 /** 仅供测试使用的路径构建器，生产脚本解析走 findScript() */
 export function scriptFileFor(serviceName: string, resourceName: string, methodName: string): string {

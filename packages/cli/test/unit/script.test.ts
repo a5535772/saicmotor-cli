@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { findScript, scriptFileFor, type ScriptFn } from "../../src/engine/script";
+import { findScript, scriptFileFor } from "../../src/engine/script";
 import { distRoot } from "../../src/pkg-root";
 import { runMethod } from "../../src/engine/run";
 import { loadConfig } from "../../src/config";

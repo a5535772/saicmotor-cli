@@ -23,7 +23,7 @@ import type {
   ScriptFn,         // 脚本默认导出函数签名
   RunResult,        // 脚本返回值 { ok: true, data: unknown }
   Service, Method, Resource, Field,  // catalog 声明类型
-  Config, AuthConfig                 // CLI 配置类型
+  Config                             // 插件脚本可见的配置子集（仅 gateway）
 } from "@saicmotor/sdk";
 ```
 
@@ -95,7 +95,7 @@ export default create;
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `config` | `Config` | 当前配置（含 gateway、auth） |
+| `config` | `Config` | 当前配置（仅 gateway） |
 | `service` | `Service` | 当前 service 的 catalog 定义 |
 | `method` | `Method` | 当前 method 的 catalog 定义 |
 | `values` | `Record<string, unknown>` | 用户输入的参数（已做类型转换） |
