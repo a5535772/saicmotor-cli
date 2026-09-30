@@ -1,5 +1,5 @@
 import type { Config } from "./config-types";
-import type { Service, Method } from "./catalog-types";
+import type { Service, Method } from "./catalog";
 
 /**
  * 插件 script 执行上下文。

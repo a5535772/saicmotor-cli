@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ServiceSchema } from "../../src/schema/catalog";
+import { ServiceSchema } from "../src/catalog";
 
 const valid = {
   name: "leave",
