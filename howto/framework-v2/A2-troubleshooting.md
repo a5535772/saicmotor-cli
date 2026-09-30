@@ -92,7 +92,7 @@
 
 | 症状 | 原因 | 解决 |
 |------|------|------|
-| `saicmotor validate .` 失败"engine must be a non-empty string" | manifest 缺少 `engine` 字段 | 加 `"engine": "^0.8.0"` |
+| `saicmotor validate .` 失败"engine must be a non-empty string" | manifest 缺少 `engine` 字段 | 加 `"engine": ">=0.8.0"` |
 | `tsc` 编译报类型错误（插件中） | 插件中 `import` 了 SDK 的 value（而非 type） | 用 `import type { ScriptContext }` 而非 `import { ScriptContext }` |
 | `create plugin` 生成的文件不全 | 脚手架只会生成基础骨架，catalog/skill 需要手动填 | 这是预期行为。按 [10 插件开发指南](./10-plugin-development.md) 补充 |
 | `saicmotor dev` 后 `plugin list --json` 为空 | linked/ 目录不存在或 junction 建立失败 | 检查 `~/.saicmotor/plugins/linked/` 目录，重新执行 `saicmotor dev` |

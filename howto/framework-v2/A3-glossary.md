@@ -22,7 +22,9 @@
 | **Suite** | Suite | `saicmotor-suite` 的简称——AI Agent 的统一入口 skill，包含意图路由表（"请假 → saicmotor-leave"）。 |
 | **路由表** | Route Table | Suite SKILL.md 中的意图→Skill 映射表，由 `buildSuiteRoutes()` 全量重建。 |
 | **Manifest** | Manifest | `saicmotor.plugin.json`，插件的身份和功能声明文件——告诉引擎"我是谁、我能做什么"。 |
+| **engine** | engine | 插件的 semver 兼容声明字段（`saicmotor.plugin.json`），声明本插件兼容的核心版本范围。0.x 阶段推荐 `>=`（开放上界），跳 1.0 后恢复 `^`。 |
 | **脚本覆盖** | Script Override | 用自定义 TypeScript/JavaScript 脚本替代引擎默认的 HTTP 直连管线。用于复杂业务逻辑。 |
+| **SaicmotorError** | SaicmotorError | 统一错误类，定义在 `@saicmotor/sdk`（`packages/sdk/src/error.ts`），CLI 和插件共享。包含 `category`（string）、`message`、`hint?`、`upstream?`，提供 `exitCode` getter 按 category 映射退出码。 |
 
 ## 架构术语
 
@@ -33,7 +35,7 @@
 | **执行层** | Execution Layer | 四层架构第三层——Engine。执行 HTTP 请求 + 格式化输出。 |
 | **插件层** | Plugin Layer | 四层架构最下层——Plugin System。插件加载、生命周期、Skills 注册。 |
 | **Monorepo** | Monorepo | 单仓库多包管理——saicmotor-cli 使用 npm workspaces 管理 5 个 npm 包。 |
-| **SDK** | SDK | `@saicmotor/sdk`——纯类型 + zod schema 包，零运行时逻辑。 |
+| **SDK** | SDK | `@saicmotor/sdk`——类型定义 + zod schema + 错误类的共享包。SaicmotorError、ServiceSchema、Config 等均由 SDK 导出。 |
 
 ## 插件系统
 
@@ -67,6 +69,9 @@
 | **findScript** | findScript | 四层查找脚本覆盖——环境变量 → 插件 scripts → 编译产物 → 源码树。 |
 | **checkEnvelope** | checkEnvelope | 响应校验——status < 400 且 body.code === 0 才算成功。 |
 | **ScriptContext** | ScriptContext | 引擎注入给脚本的运行时上下文——config、service、method、values、dryRun、ensureToken。 |
+| **getCoreVersion** | getCoreVersion | 从 `packages/cli/package.json` 动态读取版本号的函数（`packages/cli/src/version.ts`）。结果缓存，全体系唯一版本源——SDK 和插件 scaffold 均从此派生版本号。 |
+| **isSaicmotorError** | isSaicmotorError | 结构判断函数（`packages/cli/src/cli/error.ts`），检查对象是否有 `category`（string）和 `exitCode`（number）字段。用于替代跨包 `instanceof`——插件和 CLI 各有一份 `@saicmotor/sdk` 副本时 `instanceof` 会失灵。 |
+| **within(base, candidate)** | within | 路径围栏函数（`packages/cli/src/engine/script.ts`），验证候选路径在基础目录范围内。用于 `findScript` 的路径穿越防护——阻止 `..` 逃逸到脚本目录之外。 |
 
 ## 配置
 
@@ -76,6 +81,7 @@
 | **用户配置** | User Config | `~/.saicmotor/config.json`——用户的本地覆盖配置。 |
 | **硬编码默认** | Hardcoded Default | `src/config.ts` 的 `DEFAULT_CONFIG`——最终兜底值。 |
 | **配置瀑布** | Config Cascade | 环境变量 > 用户配置 > 包级默认 > 硬编码的优先级链。 |
+| **Config** | Config | SDK 侧接口（`packages/sdk/src/config-types.ts`）只含 `{ gateway }`——这是接口隔离原则的体现，插件脚本只知道网关地址。CLI 侧的完整认证配置（auth type、credentials 等）在自己的模块中独立管理和合并。 |
 
 ## 构建与发布
 

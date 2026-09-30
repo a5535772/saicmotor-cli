@@ -18,6 +18,8 @@ flowchart LR
 
 **构建顺序约束**：`@saicmotor/sdk` 是 `@saicmotor/cli` 的 **runtime dependency**，SDK 必须先于 CLI 编译。插件之间无编译依赖，可并行。
 
+**版本同步机制**：`scripts/sync-versions.mjs` 保证 SDK 和 CLI 的版本号始终一致——读取 CLI 的 `version` 字段，与 SDK 比较，如果不同则覆写 SDK 的 `version`。这是一个发布前的强制步骤，不是可选的检查。CLI 是唯一版本源，所有其他包从它派生。
+
 ### 当前构建脚本
 
 ```json
@@ -132,7 +134,10 @@ npm run build
 # 2. 运行测试（确保全绿）
 npm test
 
-# 3. 发布各包（SDK 必须最先发布）
+# 3. 同步版本号（SDK version ← CLI version）
+npm run sync-versions
+
+# 4. 发布各包（SDK 必须最先发布）
 npm publish --registry=<内部 registry> --workspace=packages/sdk
 npm publish --registry=<内部 registry> --workspace=packages/plugin-user
 npm publish --registry=<内部 registry> --workspace=packages/plugin-leave

@@ -247,7 +247,7 @@ ls ~/.saicmotor                       # → 目录不存在
 ### 02 系统架构
 
 1. 只需改编排层（Skills）+ 声明层（Catalog）。不需要改执行层（Engine）和插件层（Plugin System）
-2. CLI → SDK：runtime dependency（直接 import）；插件 → SDK：devDependency（仅类型提示，不 import 到代码）
+2. CLI → SDK：runtime dependency（直接 import SaicmotorError、Config 等值）；插件 → SDK：取决于用法——仅类型注解放 devDependencies，脚本中 import `SaicmotorError` 等运行值必须放 dependencies
 3. Commander 解析 → coerceFields → findScript → ensureToken → send → checkEnvelope → 格式化输出
 
 ### 03 安装全流程

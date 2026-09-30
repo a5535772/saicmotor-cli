@@ -59,6 +59,32 @@ plugin-<name>/
 | 🟡 | 必须 |
 | ⚪ | 可选 |
 
+### 骨架生成详情
+
+`saicmotor create plugin my-system` 生成的工程中：
+
+- `saicmotor.plugin.json` 的 `engine` 字段值为 `>=${getCoreVersion()}`——运行时从 `packages/cli/package.json` 读取当前核心版本号（如 `>=0.8.0`），确保插件声明的兼容范围与发布时的核心版本精确匹配。
+
+- `package.json` 中 `@saicmotor/sdk` 的版本声明也是 `>=${CORE_VERSION}`（放在 `devDependencies`）。
+
+- **0.x 版本区间策略**：`>=`（开放上界）而非 `^`。原因是 0.x 阶段 minor 提升即 breaking change，`^` 的上界锁定（`<1.0.0`）在这里是正确的——但这同样适用于 `>=`。选择 `>=` 的动机是脚手架生成的是"起点区间"而非"锁定区间"：每当核心发新版时重新脚手架一趟，`>=` 自然兜住此后所有新版。工程生成后用户可根据自身稳定性需求缩小为 `^`。跳 1.0 后推荐恢复 `^`。
+
+### SDK 依赖：`dependencies` vs `devDependencies`
+
+`@saicmotor/sdk` 提供了两类导出：
+
+| 导出类别 | 示例 | 用途 |
+|----------|------|------|
+| 类型（`type`） | `ScriptContext`、`ScriptFn`、`Config` | 编译时类型注解，编译后擦除 |
+| 值（value） | `SaicmotorError`、`EXIT_CODES` | 运行时实例化或引用 |
+
+放法分两种，标准来自 npm 生态中 `dependencies` 与 `devDependencies` 的原始语义：
+
+- **只用类型或 zod schema**（纯 catalog/manifest 声明、仅类型注解的脚本）：放 `devDependencies`。编译后类型擦除，published 安装时不需要 SDK。
+- **运行时 import 值**（脚本中 `import { SaicmotorError } from "@saicmotor/sdk"`）：必须放 `dependencies`。published 安装时脚本由插件自己的 `node_modules` 解析 SDK——如果 SDK 不在 `dependencies`，`npm install` 不会安装它，脚本在运行时 `import` 失败。
+
+脚手架默认将 SDK 放在 `devDependencies`。如果你在脚本中写了 `throw new SaicmotorError(...)`，必须将其移到 `dependencies`。忘记这一点的后果是：本地开发 `tsx` 运行正常（有 workspace hoisted SDK），npm publish 后用户安装运行直接报 `Cannot find module '@saicmotor/sdk'`。
+
 ---
 
 ## 10.3 声明式开发（零代码）
@@ -142,6 +168,10 @@ flowchart LR
 >
 > 如果你在 catalog JSON 中加了一个新字段，命令行不会报错，但 `coerceFields()` 不会处理它——因为它只处理 `method.requestBody` 中声明的字段。zod schema 也不认识它——`ServiceSchema.parse()` 不会报错（因为 zod 默认忽略未知字段），但新字段不会有任何效果。
 
+### Catalog 声明与 zod schema
+
+Catalog JSON 的 schema 由 `@saicmotor/sdk` 提供——`ServiceSchema`、`ResourceSchema`、`MethodSchema`、`FieldSchema` 都从 SDK 包导出（`packages/sdk/src/catalog.ts`）。插件开发者不需要在自己的工程中定义 zod schema——manifest 和 catalog 的校验由 CLI 引擎在加载时完成。这些 schema 只是插件开发者的参考——理解哪些字段是被引擎识别的、哪些会被忽略。
+
 ---
 
 ## 10.5 脚本开发（必要时落代码）
@@ -193,6 +223,16 @@ const submit: ScriptFn = async (ctx: ScriptContext): Promise<RunResult> => {
 };
 
 export default submit;
+```
+
+**错误处理**：如果上游返回了非预期状态，脚本应该抛出 `SaicmotorError`，让 CLI 引擎按统一的 envelope 格式输出：
+
+```typescript
+import { SaicmotorError } from "@saicmotor/sdk";
+// ...
+if (resp.status >= 400) {
+  throw new SaicmotorError("upstream", `上游 HTTP ${resp.status}`);
+}
 ```
 
 ### 脚本文件位置
@@ -269,7 +309,7 @@ saicmotor my-system items create --name <名称> --yes
 ```typescript
 {
   "name": "@saicmotor/plugin-xxx",      // 必须与 package.json name 一致
-  "engine": "^0.8.0",                   // semver，声明兼容的核心版本
+  "engine": ">=0.8.0",                  // semver，声明兼容的核心版本（0.x 阶段用 >=）
   "catalog": ["catalog/services/*.json"], // catalog glob 列表
   "skills": ["skills/saicmotor-xxx"],    // skill 目录列表
   "scripts": "dist/scripts",             // ⚠️ 必须指向编译后的 .js 产物
