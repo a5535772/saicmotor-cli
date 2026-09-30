@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体怎么打通公司内部系统 · 现状说明</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    background:#eef2f7;color:#1a2a4a;line-height:1.6;
+    min-height:100vh;padding:20px
+  }
+  .page{
+    max-width:1200px;margin:0 auto;background:#fff;
+    border-radius:16px;box-shadow:0 20px 60px rgba(10,22,40,0.12);overflow:hidden
+  }
+  .top-bar{height:6px;background:linear-gradient(90deg,#1a3a6a,#3b7dd8,#f0c44a,#1a3a6a)}
+
+  /* ===== HEADER ===== */
+  .header{
+    padding:32px 48px 24px;background:linear-gradient(135deg,#0d2137,#1a3a6a);
+    color:#fff;position:relative;overflow:hidden
+  }
+  .header::after{
+    content:'';position:absolute;right:-40px;top:-40px;
+    width:240px;height:240px;border-radius:50%;border:1px solid rgba(255,255,255,0.05)
+  }
+  .header-badge{
+    display:inline-block;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);
+    padding:4px 16px;border-radius:20px;font-size:12px;letter-spacing:2px;
+    color:rgba(255,255,255,0.75);margin-bottom:10px
+  }
+  .header h1{font-size:28px;font-weight:700;letter-spacing:1px;position:relative;z-index:1}
+  .header h1 span{color:#f0c44a}
+  .header-sub{
+    font-size:13px;color:rgba(255,255,255,0.65);margin-top:6px;
+    display:flex;gap:20px;flex-wrap:wrap;position:relative;z-index:1
+  }
+  .header-sub .tag{background:rgba(255,255,255,0.07);padding:2px 12px;border-radius:12px;font-size:11px}
+
+  /* ===== SECTION ===== */
+  .section{
+    padding:28px 48px;border-bottom:1px solid #eef2f7
+  }
+  .section:last-of-type{border-bottom:none}
+  .section-number{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:700;
+    margin-right:10px;vertical-align:middle
+  }
+  .section-title{
+    font-size:20px;font-weight:700;color:#0d2137;margin-bottom:10px;letter-spacing:1px
+  }
+  .section-title .num-blue{background:#d4e4f7;color:#1a4a7a}
+  .section-title .num-green{background:#d4efe6;color:#1a6b4a}
+  .section-title .num-gold{background:#f0d68a;color:#7a5a1a}
+  .section-title .num-red{background:#fde2e2;color:#b04a4a}
+  .section-sub{
+    font-size:13px;color:#6b7a92;margin-bottom:16px;line-height:1.7
+  }
+
+  /* ===== PRINCIPLE BOX ===== */
+  .principle-box{
+    background:linear-gradient(135deg,#f7faff,#eef6ff);border:1px solid #d6e4f0;
+    border-radius:12px;padding:20px 24px;margin:10px 0 16px
+  }
+  .principle-box .p-item{
+    display:flex;align-items:flex-start;gap:12px;padding:10px 0
+  }
+  .principle-box .p-item+.p-item{border-top:1px dashed #d6e4f0}
+  .principle-box .p-icon{
+    flex-shrink:0;width:32px;height:32px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:16px
+  }
+  .principle-box .p-icon.green{background:#d4efe6;color:#1a6b4a}
+  .principle-box .p-icon.blue{background:#d4e4f7;color:#1a4a7a}
+  .principle-box .p-icon.gold{background:#f0d68a;color:#7a5a1a}
+  .principle-box .p-icon.red{background:#fde2e2;color:#b04a4a}
+  .principle-box .p-text{flex:1;font-size:14px;color:#1a2a4a}
+  .principle-box .p-text strong{display:block;font-size:15px;margin-bottom:2px}
+  .principle-box .p-text .p-note{display:block;font-size:12px;color:#7a8aa0;margin-top:2px}
+
+  /* ===== BOUNDARY BOX ===== */
+  .boundary-box{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0
+  }
+  .boundary-item{
+    background:#fafbfc;border:1px solid #e6ecf5;border-radius:10px;padding:14px 16px;
+    border-left:3px solid
+  }
+  .boundary-item.gold{border-left-color:#c9a84c}
+  .boundary-item.blue{border-left-color:#3b7dd8}
+  .boundary-item.green{border-left-color:#1a6b4a}
+  .boundary-item.red{border-left-color:#b04a4a}
+  .boundary-item .b-label{font-size:11px;color:#8a9ab0;letter-spacing:1px;margin-bottom:2px}
+  .boundary-item .b-text{font-size:14px;font-weight:600;color:#1a2a4a;line-height:1.6}
+  .boundary-item .b-desc{font-size:12px;color:#6b7a92;margin-top:6px;line-height:1.6;font-weight:400}
+
+  /* ===== COMPARISON TABLE ===== */
+  .comp-table{
+    width:100%;border-collapse:separate;border-spacing:0;margin:12px 0;
+    font-size:13px;border-radius:10px;overflow:hidden;border:1px solid #e6ecf5
+  }
+  .comp-table th{
+    background:#f0f4fc;padding:10px 14px;text-align:left;font-weight:600;color:#1a3a6a;font-size:12px
+  }
+  .comp-table td{
+    padding:10px 14px;border-top:1px solid #eef2f7;color:#2a3a5a;vertical-align:top
+  }
+  .comp-table tr:first-child td{border-top:none}
+  .comp-table tr:hover td{background:#fafbff}
+
+  .comp-table .tag-hi{display:inline-block;background:#d4efe6;color:#1a6b4a;padding:1px 10px;border-radius:10px;font-size:11px;font-weight:600}
+  .comp-table .tag-ak{display:inline-block;background:#d4e4f7;color:#1a4a7a;padding:1px 10px;border-radius:10px;font-size:11px;font-weight:600}
+  .comp-table .tag-both{display:inline-block;background:#f0d68a;color:#7a5a1a;padding:1px 10px;border-radius:10px;font-size:11px;font-weight:600}
+  .comp-table .tag-bad{display:inline-block;background:#fde2e2;color:#b04a4a;padding:1px 10px;border-radius:10px;font-size:11px;font-weight:600}
+
+  /* ===== OVERVIEW CARDS ===== */
+  .overview-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:12px 0}
+  .overview-card{
+    background:#fff;border:1px solid #e6ecf5;border-radius:12px;padding:16px;text-align:center
+  }
+  .overview-card .ov-icon{font-size:24px;margin-bottom:4px}
+  .overview-card .ov-title{font-size:15px;font-weight:700;color:#0d2137;margin:2px 0}
+  .overview-card .ov-desc{font-size:12px;color:#6b7a92;line-height:1.5;text-align:left;margin-top:4px}
+
+  /* ===== FLOW DIAGRAM ===== */
+  .diagram-box{
+    background:#fafbfc;border:1px solid #e6ecf5;border-radius:12px;padding:16px;margin:12px 0;overflow-x:auto
+  }
+
+  /* ===== DOOR CARDS ===== */
+  .door-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:12px 0}
+  .door-item{
+    background:#fafbfc;border:1px solid #e6ecf5;border-radius:12px;padding:16px;border-top:3px solid #c9a84c
+  }
+  .door-item .d-num{font-size:12px;font-weight:700;color:#7a5a1a;letter-spacing:1px}
+  .door-item .d-title{font-size:15px;font-weight:700;color:#0d2137;margin:6px 0 4px}
+  .door-item .d-desc{font-size:12px;color:#6b7a92;line-height:1.6}
+  .door-item .d-who{font-size:11px;color:#8a9ab0;margin-top:8px;padding-top:8px;border-top:1px dashed #e6ecf5}
+
+  /* ===== CASE CARD ===== */
+  .case-card{
+    background:linear-gradient(135deg,#f7faff,#fff);border:2px solid #c9a84c;
+    border-radius:12px;padding:20px 24px;margin:12px 0
+  }
+  .case-card .cc-title{font-size:16px;font-weight:700;color:#0d2137;margin-bottom:4px}
+  .case-card .cc-reason{
+    background:#fafbfc;border:1px solid #e6ecf5;border-radius:8px;padding:12px 14px;font-size:13px;color:#2a3a5a;line-height:1.7
+  }
+
+  /* ===== TIMELINE ===== */
+  .timeline{margin:16px 0;position:relative;padding-left:24px}
+  .timeline::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:#d6e4f0}
+  .tl-item{position:relative;padding:10px 0 10px 20px}
+  .tl-item::before{content:'';position:absolute;left:-18px;top:16px;width:10px;height:10px;border-radius:50%;background:#3b7dd8;border:2px solid #fff;box-shadow:0 0 0 2px #3b7dd8}
+  .tl-item .tl-time{font-size:11px;font-weight:700;color:#1a4a7a;letter-spacing:1px}
+  .tl-item .tl-text{font-size:13px;color:#2a3a5a;margin-top:2px}
+
+  /* ===== NUMBERED LIST ===== */
+  .num-list{margin:12px 0}
+  .num-list .nl-item{
+    display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px dashed #eef2f7
+  }
+  .num-list .nl-item:last-child{border-bottom:none}
+  .num-list .nl-num{
+    flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#d4e4f7;color:#1a4a7a;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700
+  }
+  .num-list .nl-text{flex:1;font-size:13px;color:#2a3a5a;line-height:1.6}
+
+  /* ===== GIST QUOTE ===== */
+  .gist-box{
+    background:linear-gradient(135deg,#fff8f0,#fff);border:1px solid #f0d68a;border-left:4px solid #c9a84c;
+    border-radius:10px;padding:16px 20px;margin:12px 0;font-size:14px;color:#3a3a2a;line-height:1.7
+  }
+  .gist-box strong{color:#7a5a1a}
+
+  /* ===== NOTE BOX ===== */
+  .note-box{
+    background:#f0f4fc;border:1px solid #d6e4f0;border-radius:8px;padding:10px 14px;
+    font-size:12px;color:#5a6a82;margin-top:10px;line-height:1.7
+  }
+
+  /* ===== FOOTER ===== */
+  .footer{
+    padding:16px 48px;background:#f7faff;border-top:1px solid #e6ecf5;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px
+  }
+  .footer-left{font-size:11px;color:#6b7a92}
+  .footer-left strong{color:#1a3a6a}
+  .footer-right{display:flex;gap:10px;flex-wrap:wrap}
+  .footer-right .ref{font-size:10px;color:#6b7a92;background:#edf2fa;padding:3px 10px;border-radius:10px}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:1024px){
+    .header{padding:20px 24px}
+    .header h1{font-size:22px}
+    .section{padding:20px 24px}
+    .overview-grid,.door-grid{grid-template-columns:1fr}
+    .boundary-box{grid-template-columns:1fr}
+    .footer{flex-direction:column;text-align:center;padding:16px 24px}
+  }
+  @media(max-width:640px){
+    body{padding:10px}
+    .header h1{font-size:18px}
+    .section-title{font-size:17px}
+    .comp-table{font-size:12px}
+    .comp-table th,.comp-table td{padding:6px 10px}
+  }
+  @media print{body{background:#fff}.page{box-shadow:none;margin:0}}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="top-bar"></div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-badge">AI 智能体接入 · 现状说明</div>
+    <h1>智能体怎么<span>够到</span>公司内部系统</h1>
+    <div class="header-sub">
+      <span>面向公司领导 · 非技术视角</span>
+      <span class="tag">现状与边界</span>
+      <span class="tag">通俗比喻</span>
+      <span class="tag">约 15 分钟</span>
+    </div>
+  </header>
+
+  <!-- ===== SECTION 1: 先讲结论 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-gold">01</span>先讲结论
+    </div>
+    <div class="section-sub">
+      用一句话说清当前局面，后面所有内容都是这句话的展开。
+    </div>
+
+    <div class="principle-box">
+      <div class="p-item">
+        <div class="p-icon green">🟢</div>
+        <div class="p-text">
+          <strong>跑在员工自己电脑上的智能体，现在就能用</strong>
+          像 Claude Code、Trae、CodeBuddy 这类"终端智能体"，装上我们自研的一个命令行工具，就能帮员工查请假、查考勤。这条路已经走通，具备条件。
+          <span class="p-note">→ 相当于在员工自己的房间里安排了一名办事员，随时使唤</span>
+        </div>
+      </div>
+      <div class="p-item">
+        <div class="p-icon red">🔴</div>
+        <div class="p-text">
+          <strong>飞书、腾讯 ADP 这类云端平台上的智能体，目前进不去</strong>
+          平台只提供"插件、技能、工作流"这类网络服务式通道，不给第三方工具开安装入口，所以我们的工具装不进它的云端环境。
+          <span class="p-note">→ 相当于酒店房间只准用酒店自带的设施，自己的家具搬不进去</span>
+        </div>
+      </div>
+      <div class="p-item">
+        <div class="p-icon gold">🟡</div>
+        <div class="p-text">
+          <strong>症结不在我们，而在平台一侧</strong>
+          第三方工具要进入云端，平台必须同时打开"三扇门"：安装通道、持久化、凭证注入。这三把钥匙都握在平台手里，我们单方面解决不了。
+          <span class="p-note">→ 是行业现状决定的边界，不是我们的产品没做好</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gist-box">
+      一句话总纲：<strong>办事员（工具）必须和员工（智能体）待在同一个房间里，才能帮上忙；而房间是物业（平台）给的、钥匙也是物业管的。</strong>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 2: 难在哪 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-blue">02</span>这件事到底难在哪
+    </div>
+    <div class="section-sub">
+      不是"AI 聪不聪明"，而是"AI 能不能安全地够到系统"。
+    </div>
+
+    <div class="diagram-box">
+      <pre class="mermaid" style="text-align:center">
+flowchart LR
+    A["员工说话<br>帮我查年假"] --> B["智能体<br>听懂意图"]
+    B --> C{"？<br>最后一公里"}
+    C --> D["企业内部系统<br>返回结果"]
+    style A fill:#eef2f7,stroke:#1a3a6a,color:#1a3a6a
+    style B fill:#d4e4f7,stroke:#1a4a7a,color:#1a4a7a
+    style C fill:#f0d68a,stroke:#7a5a1a,color:#7a5a1a
+    style D fill:#d4efe6,stroke:#1a6b4a,color:#1a6b4a
+      </pre>
+    </div>
+
+    <div class="principle-box">
+      <div class="p-item">
+        <div class="p-icon blue">🚪</div>
+        <div class="p-text">
+          <strong>难点就在中间这一段，要解决三件事</strong>
+          ① 通道：用什么方式去调用系统接口；② 身份：系统怎么知道"这次是替哪个员工办的"；③ 安全：怎么保证调用范围可控、可审计、能追溯。
+          <span class="p-note">再强的模型，如果平台不给它开门、不给装工具的地方、不告诉它当前用户是谁，也只能"原地聪明"</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gist-box">
+      企业用 AI 的瓶颈，正从<strong>"模型够不够聪明"</strong>转向<strong>"通道、身份、安全这最后一公里"</strong>。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 3: 核心原理 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-blue">03</span>核心原理：工具必须和智能体"住在一起"
+    </div>
+    <div class="section-sub">
+      这是理解全部现象的一把钥匙，用生活化比喻讲清楚。
+    </div>
+
+    <table class="comp-table">
+      <thead>
+        <tr><th style="width:50%">比喻</th><th style="width:50%">对应概念</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>企业里的业务系统（请假、考勤、人事）</td><td>办公楼里一个个<strong>部门办事窗口</strong></td></tr>
+        <tr><td>AI 智能体</td><td>一名<strong>聪明但没有工牌的新员工</strong></td></tr>
+        <tr><td>CLI（命令行工具）</td><td>一名<strong>驻场办事员</strong>：你告诉他办什么，他跑去窗口替你办</td></tr>
+        <tr><td>运行智能体的环境</td><td>这名员工<strong>办公和住宿的房间</strong></td></tr>
+        <tr><td>密码、令牌等凭证</td><td>开门用的<strong>钥匙和门禁卡</strong></td></tr>
+        <tr><td>飞书、腾讯、字节等平台方</td><td>整栋大楼的<strong>物业</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="gist-box">
+      关键机制：智能体调用工具，<strong>不是打电话、不是发微信，而是在同一个房间里直接"喊人出来办事"</strong>。这意味着——<strong>工具必须装在智能体所在的同一个环境里</strong>（同一台电脑、同一个容器）。装到别处，就喊不到。这不是我们的设计选择，而是系统的工作方式决定的。
+    </div>
+
+    <div style="font-size:15px;font-weight:700;color:#0d2137;margin:12px 0 4px">三种方式在两端的效果：MCP / Skills 都能用，CLI 只有本地能用</div>
+
+    <div class="diagram-box">
+      <pre class="mermaid" style="text-align:center">
+flowchart LR
+    subgraph L["🖥️ 本地 · 员工电脑（长住房）"]
+        direction TB
+        LA["智能体"]
+        LA -->|"同房间喊人"| LC["CLI 办事员\n（就装在这台电脑里）✅"]
+        LA -->|"网络连出去"| LM["MCP 总台\n（房外服务器）✅"]
+        LA -->|"翻开手册"| LS["Skills 手册\n（加载进来）✅"]
+    end
+    subgraph R["☁️ 云端 · 平台临时房间（酒店房间）"]
+        direction TB
+        RA["智能体"]
+        RA -.->|"❌ 装不进 · 存不住 · 没钥匙"| RC["CLI 办事员\n（进不了房间）❌"]
+        RA -->|"网络连出去"| RM["MCP 总台\n（房外服务器）✅"]
+        RA -->|"翻开手册"| RS["Skills 手册\n（平台开放加载）✅"]
+    end
+    style L fill:#f2faf6,stroke:#1a6b4a
+    style R fill:#fff6f6,stroke:#b04a4a
+    style LA fill:#eef2f7,stroke:#1a3a6a,color:#1a3a6a
+    style RA fill:#eef2f7,stroke:#1a3a6a,color:#1a3a6a
+    style LC fill:#d4efe6,stroke:#1a6b4a,color:#1a6b4a
+    style LM fill:#d4efe6,stroke:#1a6b4a,color:#1a6b4a
+    style LS fill:#d4efe6,stroke:#1a6b4a,color:#1a6b4a
+    style RC fill:#fde2e2,stroke:#b04a4a,color:#b04a4a
+    style RM fill:#d4efe6,stroke:#1a6b4a,color:#1a6b4a
+    style RS fill:#d4efe6,stroke:#1a6b4a,color:#1a6b4a
+      </pre>
+    </div>
+
+    <div class="gist-box">
+      为什么结果不一样？关键在<strong>"要不要搬进房间"</strong>：<br>
+      · <strong>CLI 是"驻场办事员"，必须和智能体住在同一个房间</strong>——本地有自己的长住房，住得下 ✅；云端是临时酒店房间，不给装、存不住、没钥匙 ❌。<br>
+      · <strong>MCP 是"连出去的总台"、Skills 是"翻开的操作手册"</strong>——都不需要搬进房间，所以本地、云端都能用 ✅。
+    </div>
+
+    <div class="boundary-box">
+      <div class="boundary-item green">
+        <div class="b-label">🖥️ 本地长住房 · 终端智能体</div>
+        <div class="b-text">房间长期存在，想装什么就装什么</div>
+        <div class="b-desc">代表：Claude Code、Trae、CodeBuddy、Cursor 等。跑在员工自己电脑上，装上的工具一直在，重启也在，员工有完全支配权。</div>
+      </div>
+      <div class="boundary-item red">
+        <div class="b-label">☁️ 云端酒店房间 · 平台托管</div>
+        <div class="b-text">临时房间，任务结束就销毁</div>
+        <div class="b-desc">代表：腾讯 ADP、字节 Coze、飞书 Aily 等。每接一个任务临时开一个"房间"，用完就收回，下次可能是个全新的空房间。</div>
+      </div>
+    </div>
+
+    <div class="gist-box">
+      终端智能体有自己的长住房，工具<strong>天然适配</strong>；云端平台是临时酒店房间，这就是后面所有<strong>"装不进去"</strong>的根源。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 4: 三种连接方式 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-green">04</span>三种连接方式
+    </div>
+    <div class="section-sub">
+      智能体和内部系统之间隔条河，业界目前有三座桥，各有用途，常常组合使用。
+    </div>
+
+    <div class="overview-grid">
+      <div class="overview-card">
+        <div class="ov-icon">🧑‍💼</div>
+        <div class="ov-title">CLI（驻场办事员）</div>
+        <div class="ov-desc">把工具装进智能体的房间，直接干活。任何能"开进程"的智能体都能用，调试直观；代价是每次调用要起进程、安全边界较粗。</div>
+      </div>
+      <div class="overview-card">
+        <div class="ov-icon">🏢</div>
+        <div class="ov-title">MCP（标准总台）</div>
+        <div class="ov-desc">行业标准协议，智能体用统一方式调用外部工具；凭证留在系统一侧、不进智能体环境，便于鉴权审计。代价是每接一个系统要建一个"总台"。</div>
+      </div>
+      <div class="overview-card">
+        <div class="ov-icon">📖</div>
+        <div class="ov-title">Skills（操作手册）</div>
+        <div class="ov-desc">教智能体"什么情况、按什么套路、分几步办"。和 MCP 互补——手册 + 窗口，两者常捆绑提供，而非二选一。</div>
+      </div>
+    </div>
+
+    <table class="comp-table">
+      <thead>
+        <tr><th style="width:16%">维度</th><th style="width:28%">CLI</th><th style="width:28%">MCP</th><th style="width:28%">Skills</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>通俗理解</strong></td>
+          <td><span class="tag-hi">驻场办事员</span></td>
+          <td><span class="tag-ak">标准化总台</span></td>
+          <td><span class="tag-both">操作手册</span></td>
+        </tr>
+        <tr>
+          <td><strong>本质</strong></td>
+          <td>可执行程序</td>
+          <td>调用协议</td>
+          <td>说明书 + 脚本</td>
+        </tr>
+        <tr>
+          <td><strong>凭证（钥匙）在哪</strong></td>
+          <td>智能体环境内</td>
+          <td>系统一侧（不进智能体）</td>
+          <td>视手册调用的工具而定</td>
+        </tr>
+        <tr>
+          <td><strong>安全细粒度</strong></td>
+          <td><span class="tag-bad">较粗</span></td>
+          <td><span class="tag-hi">强</span></td>
+          <td><span class="tag-both">取决于底层</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note-box">
+      💡 一个值得注意的趋势：Claude Code、OpenAI、Google，以及国内的飞书、钉钉、企业微信，都在推"为人和 AI 同时设计"的官方命令行工具，说明 CLI 这条路的方向是被行业验证的。<strong>但"趋势"不等于"平台已经开放"</strong>——云端平台如何接纳第三方工具，仍是下面要讲的行业空白。
+    </div>
+
+    <div class="gist-box">
+      <strong>MCP 管连接、Skills 教方法、CLI 直接干活。</strong>前两者是当今主流，"AI 原生 CLI"是明确趋势；聪明的做法通常是三者组合，而不是迷信任何一个。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 5: 平台现状 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-gold">05</span>平台现状：一边畅通，一边关门
+    </div>
+    <div class="section-sub">
+      分两类平台看，结果截然不同。
+    </div>
+
+    <div class="boundary-box">
+      <div class="boundary-item green">
+        <div class="b-label">🟢 终端类 · 畅通（现在能用）</div>
+        <div class="b-text">装上我们的工具，跟装普通软件一样简单</div>
+        <div class="b-desc">Claude Code、Trae、CodeBuddy、Gemini CLI、Cursor、Windsurf。共性：跑在员工本地，一条命令即可安装，随后智能体就能调用。</div>
+      </div>
+      <div class="boundary-item red">
+        <div class="b-label">🔴 云端托管 · 关门（进不去）</div>
+        <div class="b-text">只有"网络服务式"通道，没有工具安装入口</div>
+        <div class="b-desc">腾讯 ADP、字节 Coze、飞书 Aily、阿里百炼、文心、OpenAI。共性：只提供插件、技能、MCP、工作流，第三方工具装不进云端容器。</div>
+      </div>
+    </div>
+
+    <div class="case-card">
+      <div class="cc-title">❓ 常被问到：飞书容器里明明有飞书自己的 CLI，为什么说第三方进不去？</div>
+      <div class="cc-reason">
+        那是<strong>飞书自家的工具</strong>，走的是"官方预装"待遇：凭证由平台托管（钥匙在物业手里），用户不用自己粘贴任何密钥。<strong>这证明不了第三方工具也能进。</strong>
+        <br><br>
+        打个比方：酒店房间里放着一把印有酒店 logo 的雨伞，那是酒店自己放的、统一管理的；这不意味着你可以把自己的家具搬进房间、并且指望换了房间之后家具还在。
+      </div>
+    </div>
+
+    <div class="gist-box">
+      截至 2026 年 9 月，<strong>没有任何一家主流云端平台</strong>把"用户自带的第三方工具装进云端容器并持久化"作为产品能力提供。平台的官方通道高度统一：<strong>插件 / 技能、MCP、工作流、连接器</strong>——本质都是把外部能力当"网络服务"在运行时调用，而不是把外部程序装进去。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 6: 瓶颈定性 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-gold">06</span>瓶颈定性：三扇门的钥匙在平台手里
+    </div>
+    <div class="section-sub">
+      第三方工具要进入云端正常工作，以下三个条件缺一不可，而它们都由平台决定。
+    </div>
+
+    <div class="door-grid">
+      <div class="door-item">
+        <div class="d-num">门 ①</div>
+        <div class="d-title">安装通道</div>
+        <div class="d-desc">允许第三方程序进入执行环境（自定义镜像、官方安装入口或扩展机制）。</div>
+        <div class="d-who">由谁决定：平台</div>
+      </div>
+      <div class="door-item">
+        <div class="d-num">门 ②</div>
+        <div class="d-title">持久化</div>
+        <div class="d-desc">容器销毁后，工具和绑定关系还能保留，不必每次重装。</div>
+        <div class="d-who">由谁决定：平台</div>
+      </div>
+      <div class="door-item">
+        <div class="d-num">门 ③</div>
+        <div class="d-title">凭证注入</div>
+        <div class="d-desc">工具能以"当前对话员工"的身份合法调用系统，凭证有安全的注入与托管机制。</div>
+        <div class="d-who">由谁决定：平台（+ 企业 IT 配合）</div>
+      </div>
+    </div>
+
+    <div style="font-size:15px;font-weight:700;color:#0d2137;margin:16px 0 4px">专门讲一下"身份"：两层身份，绝不能混</div>
+
+    <table class="comp-table">
+      <thead>
+        <tr><th style="width:24%">身份层</th><th style="width:38%">回答的问题</th><th style="width:38%">智能体看得到吗</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>应用 / 机器人身份</strong></td>
+          <td>这个智能体"作为哪个应用"在运行</td>
+          <td>看不到凭证本身</td>
+        </tr>
+        <tr>
+          <td><strong>终端用户身份</strong></td>
+          <td>这次对话"是哪个员工在操作"</td>
+          <td>看得到姓名、工号，但<strong>没有对应的密码 / 令牌</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note-box">
+      ⚠️ 两个常见误区：<br>
+      · <strong>"知道用户是谁，就能替他调系统"</strong> —— 不是。知道是谁只是一个"身份标识"，真正调用系统还要有凭证（钥匙）。<br>
+      · <strong>"用户身份权限一定比机器人大"</strong> —— 不一定。实际权限 =「应用申请到的」∩「用户本人拥有的」，是交集关系。
+    </div>
+
+    <div class="gist-box">
+      装得进、留得住、拿得到钥匙——三扇门都由平台控制。我们能做的是<strong>把问题提清楚、把试点做扎实</strong>，而不是替平台去开门。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 7: 现有的基础（低调） ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-blue">07</span>现有的基础（客观说明）
+    </div>
+    <div class="section-sub">
+      过去一段时间的工作，已经搭起了一个可用的起点，但离"云端可用"还有明显距离。
+    </div>
+
+    <div class="num-list">
+      <div class="nl-item">
+        <div class="nl-num">1</div>
+        <div class="nl-text"><strong>一个自研的命令行工具</strong>：核心引擎已具备，并做了三个业务插件作为参考实现——请假、考勤、用户信息。</div>
+      </div>
+      <div class="nl-item">
+        <div class="nl-num">2</div>
+        <div class="nl-text"><strong>身份打通已完成验证</strong>：员工用飞书身份登录，换取各业务系统的访问令牌（单点登录方向），方向与上面的"两层身份"模型一致。</div>
+      </div>
+      <div class="nl-item">
+        <div class="nl-num">3</div>
+        <div class="nl-text"><strong>工程化能力</strong>：通过公司内部 npm 仓库分发，插件可独立安装、独立升级，版本不兼容会被明确拦下。</div>
+      </div>
+    </div>
+
+    <div class="note-box">
+      📌 需要客观说明的是：这些是"工具本身能做什么"的<strong>准备工作</strong>；云端平台上"装不进去"是行业现状决定的边界，<strong>不会因为有这些准备就改变</strong>。两者是不同的两件事。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 8: 下一步 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-green">08</span>下一步：两条工作线
+    </div>
+    <div class="section-sub">
+      不纠结"谁取代谁"，把工作切成两条目标不同、互不拖累的并行线。
+    </div>
+
+    <table class="comp-table">
+      <thead>
+        <tr><th style="width:16%">维度</th><th style="width:42%">线路一：云端平台 · 原生方式</th><th style="width:42%">线路二：CLI · 终端试点</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>目标</strong></td>
+          <td>让"查请假、查考勤"在云端平台上先跑通</td>
+          <td>验证并坐实自研工具的价值</td>
+        </tr>
+        <tr>
+          <td><strong>平台</strong></td>
+          <td>飞书、腾讯 ADP 等</td>
+          <td>CodeBuddy、Trae 等终端智能体</td>
+        </tr>
+        <tr>
+          <td><strong>方式</strong></td>
+          <td>MCP / Skill / 插件（平台原生）</td>
+          <td>自研命令行工具</td>
+        </tr>
+        <tr>
+          <td><strong>当前状态</strong></td>
+          <td><span class="tag-both">待可行性验证</span></td>
+          <td><span class="tag-hi">已有基础，可试点</span></td>
+        </tr>
+        <tr>
+          <td><strong>边界</strong></td>
+          <td>受平台规则约束</td>
+          <td>云端平台暂不支持，边界已明确</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="font-size:15px;font-weight:700;color:#0d2137;margin:16px 0 2px">时间线（示意）</div>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-time">已完成</div><div class="tl-text">核心引擎 + 三个业务插件 + 飞书登录验证 + 内部分发</div></div>
+      <div class="tl-item"><div class="tl-time">近期</div><div class="tl-text">终端智能体小范围试点；云端平台 MCP/Skill 可行性验证；整理需平台回答的问题</div></div>
+      <div class="tl-item"><div class="tl-time">中期</div><div class="tl-text">试点扩面、身份与审计完善；跟踪平台开放进展</div></div>
+      <div class="tl-item"><div class="tl-time">长期</div><div class="tl-text">随行业"云端 + 本机执行"合流，实现一套业务能力、多环境通用</div></div>
+    </div>
+
+    <div class="note-box">
+      💡 一个定位说明：云端线路上建设的 MCP / Skill 成果，是"为在该平台办事而穿的平台制服"，与自研 CLI 是<strong>同一业务能力在不同环境下的不同形态</strong>，不是重复竞争。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 9: 问题清单（供参考） ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-blue">09</span>需要平台方回答的问题（供参考）
+    </div>
+    <div class="section-sub">
+      这些是行业层面的开放问题，记录备查；是否推动、何时推动，视公司后续需要而定。
+    </div>
+
+    <div class="num-list">
+      <div class="nl-item"><div class="nl-num">1</div><div class="nl-text">平台是否允许第三方程序装进执行环境？通过什么机制（自定义镜像、官方扩展入口）？</div></div>
+      <div class="nl-item"><div class="nl-num">2</div><div class="nl-text">执行环境中哪些目录能跨会话持久化？工具和配置能否长期保留？</div></div>
+      <div class="nl-item"><div class="nl-num">3</div><div class="nl-text">平台能否安全传递终端用户身份？以什么格式、是否带签名、能否防伪造？</div></div>
+      <div class="nl-item"><div class="nl-num">4</div><div class="nl-text">是否托管用户对第三方应用的授权（如 OAuth）？凭证生命周期如何管理？</div></div>
+      <div class="nl-item"><div class="nl-num">5</div><div class="nl-text">对外部系统调用的审计日志、限流、权限裁剪，平台提供哪些能力？</div></div>
+      <div class="nl-item"><div class="nl-num">6</div><div class="nl-text">平台在"云端环境调用用户本机资源"方向上的路线图是怎样的？</div></div>
+    </div>
+
+    <div class="note-box">
+      📌 这份清单也是判断<strong>"平台的门何时开、开了多大"</strong>的一把标尺。一旦某个平台真正开放扩展能力，我们的工具就能第一时间接入。
+    </div>
+  </div>
+
+  <!-- ===== SECTION 10: 一页总结 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-gold">10</span>一页总结
+    </div>
+    <div class="section-sub">
+      如果只记住一页，请记住这一页。
+    </div>
+
+    <div class="principle-box">
+      <div class="p-item">
+        <div class="p-icon blue">1️⃣</div>
+        <div class="p-text">
+          <strong>现状：三条桥，两种房间</strong>
+          智能体连企业系统有三种方式——CLI（驻场办事）、MCP（标准总台）、Skills（操作手册）。智能体有两种运行环境：本地长住房（终端智能体）与云端酒店房间（平台托管）。
+        </div>
+      </div>
+      <div class="p-item">
+        <div class="p-icon gold">2️⃣</div>
+        <div class="p-text">
+          <strong>边界：CLI 必须与智能体同住；云端的门，钥匙在平台手里</strong>
+          终端智能体上，CLI 现在就能装、就能用；云端平台上要工作，平台必须同时给出安装通道、持久化、凭证注入三个条件——截至今天，还没有主流平台开放这些能力。
+        </div>
+      </div>
+      <div class="p-item">
+        <div class="p-icon green">3️⃣</div>
+        <div class="p-text">
+          <strong>下一步：两条线并行</strong>
+          云端平台上按它的规矩用原生方式先把业务跑通；终端场景下把自研工具做实试点。工具已经在手，差的是平台开门的时机。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== APPENDIX: 名词速查 ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-number num-blue">📋</span>附录：名词速查
+    </div>
+    <div class="section-sub">备查：文中出现的少量专业词，均用通俗说法解释。</div>
+
+    <table class="comp-table">
+      <thead>
+        <tr><th style="width:28%">术语</th><th>通俗解释</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>API（接口）</strong></td><td>业务系统对外提供的"办事窗口"，程序通过它查询或提交数据</td></tr>
+        <tr><td><strong>CLI（命令行工具）</strong></td><td>用文字命令操作的程序；智能体在"同房间"里调用它</td></tr>
+        <tr><td><strong>容器 / 沙箱</strong></td><td>程序运行的隔离"房间"；云端通常临时分配、用完销毁</td></tr>
+        <tr><td><strong>MCP</strong></td><td>智能体发现与调用外部工具的行业标准协议</td></tr>
+        <tr><td><strong>MCP Server</strong></td><td>系统一侧按标准提供的服务；凭证保存在此，不进智能体环境</td></tr>
+        <tr><td><strong>Skills（技能）</strong></td><td>教智能体怎么办事的"操作手册"及配套脚本，按需加载</td></tr>
+        <tr><td><strong>SSO / OAuth / OIDC</strong></td><td>单点登录与常见安全授权 / 身份协议：登录一次，多系统认你，平台代持凭证</td></tr>
+        <tr><td><strong>Token（令牌）</strong></td><td>系统发给已认证用户的"临时门票"，有有效期、可独立刷新</td></tr>
+        <tr><td><strong>应用身份 vs 用户身份</strong></td><td>"作为哪个应用运行" vs "哪个员工在操作"，两层不可混</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer">
+    <div class="footer-left">
+      <strong>定位：</strong>面向公司领导的现状说明汇报 · 非技术视角 · 了解现状、心里有数
+    </div>
+    <div class="footer-right">
+      <span class="ref">汇报时长：约 15 分钟</span>
+      <span class="ref">2026 年 9 月</span>
+    </div>
+  </div>
+</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    background: '#fafbfc',
+    primaryColor: '#d4e4f7',
+    primaryBorderColor: '#1a4a7a',
+    primaryTextColor: '#1a4a7a',
+    secondaryColor: '#d4efe6',
+    secondaryBorderColor: '#1a6b4a',
+    secondaryTextColor: '#1a6b4a',
+    tertiaryColor: '#f0d68a',
+    tertiaryBorderColor: '#7a5a1a',
+    tertiaryTextColor: '#7a5a1a',
+    fontSize: '14px',
+    fontFamily: '"PingFang SC","Microsoft YaHei",sans-serif',
+    lineColor: '#1a3a6a',
+    nodeBorder: '#1a3a6a',
+    mainBkg: '#fafbfc'
+  }
+});
+</script>
+</body>
+</html>
