@@ -315,6 +315,7 @@ describe("plugin loader", () => {
     expect(result.plugins).toHaveLength(1);
     expect(result.plugins[0].services).toHaveLength(1);
     expect(result.plugins[0].services[0].name).toBe("good");
+    expect(result.warnings.some((w: string) => w.includes("校验失败") || w.includes("解析失败"))).toBe(true);
   });
 
   it("results are sorted alphabetically", () => {

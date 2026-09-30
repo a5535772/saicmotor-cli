@@ -118,7 +118,8 @@ export function loadPlugins(_config: Config): LoadResult {
       }
 
       // 冲突检测：同 service.name 拒绝后加载者
-      const services = loadPluginServices(pkgRoot, manifest);
+      const { services, warnings: svcWarnings } = loadPluginServices(pkgRoot, manifest);
+      warnings.push(...svcWarnings);
       for (const svc of services) {
         const existing = loaded.find((p) => p.services.some((s) => s.name === svc.name));
         if (existing) {
@@ -163,8 +164,9 @@ export function loadPlugins(_config: Config): LoadResult {
   return { plugins: loaded, warnings };
 }
 
-function loadPluginServices(pkgRoot: string, manifest: PluginManifest): Service[] {
+function loadPluginServices(pkgRoot: string, manifest: PluginManifest): { services: Service[]; warnings: string[] } {
   const services: Service[] = [];
+  const warnings: string[] = [];
   const catalogGlobs = manifest.catalog ?? ["catalog/services/*.json"];
 
   for (const glob of catalogGlobs) {
@@ -183,10 +185,10 @@ function loadPluginServices(pkgRoot: string, manifest: PluginManifest): Service[
         const svc = ServiceSchema.parse(raw);
         services.push(svc);
       } catch (e: unknown) {
-        // 单个 catalog 文件损坏不阻断其他 service，由调用方汇总 warning
-        // 此处暂不 push（loadPluginServices 无 warnings channel），后续重构时统一传递
+        // 单个 catalog 文件损坏不阻断其他 service，汇总 warning 返回给调用方
+        warnings.push(`插件 ${manifest.name} catalog 校验失败 (${file}): ${(e as Error).message}`);
       }
     }
   }
-  return services;
+  return { services, warnings };
 }
